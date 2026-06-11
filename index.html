@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M13</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #171717;
+      --border: #2a2a2a;
+      --accent: #c8f135;
+      --text: #f2f2f2;
+      --muted: #a4a4a4;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(180deg, var(--bg) 0%, #080808 100%); color: var(--text); overflow: hidden; padding-bottom: 108px; }
+    .app-shell { display:flex; flex-direction:column; width:100%; height:100vh; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); background:rgba(10,10,10,0.88); -webkit-app-region:drag; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand-badge { width:12px; height:12px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 4px rgba(200,241,53,0.12); }
+    .brand h1 { margin:0; font-size:20px; color:var(--accent); }
+    .brand p { margin:4px 0 0; font-size:12px; color:var(--muted); }
+    .toolbar { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid var(--border); background:var(--surface); }
+    .btn { border:1px solid rgba(200,241,53,0.18); background:linear-gradient(180deg,#181818 0%,#121212 100%); color:var(--text); border-radius:10px; padding:10px 14px; cursor:pointer; -webkit-app-region:no-drag; }
+    .btn-primary { background:linear-gradient(180deg,#d8ff50 0%,var(--accent) 100%); color:#101010; border-color:transparent; font-weight:700; }
+    .search-box { flex:1; display:flex; align-items:center; gap:10px; min-width:260px; border:1px solid var(--border); background:#171717; border-radius:10px; padding:10px 12px; color:var(--muted); }
+    .search-box input { flex:1; border:0; outline:none; background:transparent; color:var(--text); }
+    /* Filter bar */
+    .filter-bar { display:flex; align-items:center; gap:16px; padding:8px 16px 10px; flex-wrap:wrap; border-bottom:1px solid var(--border); background:var(--bg); }
+    .filter-bar[hidden] { display:none; }
+    .filter-group { display:flex; align-items:center; gap:5px; }
+    .filter-group-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-right:2px; white-space:nowrap; }
+    .filter-pill { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:20px; padding:3px 11px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; transition:color 0.12s, background 0.12s, border-color 0.12s; }
+    .filter-pill:hover { color:var(--text); border-color:rgba(200,241,53,0.3); }
+    .filter-pill.active { background:rgba(200,241,53,0.12); border-color:rgba(200,241,53,0.5); color:var(--accent); }
+    .filter-divider { width:1px; height:16px; background:var(--border); margin:0 4px; }
+    .stats { display:flex; gap:12px; padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(17,17,17,0.92); color:var(--muted); font-size:13px; }
+    .stat-chip { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; border:1px solid var(--border); background:#171717; }
+    .stat-chip strong { color:var(--text); font-size:14px; }
+    main { flex:1; overflow:auto; padding:20px 24px 28px; background:radial-gradient(circle at top, rgba(200,241,53,0.04), transparent 25%), linear-gradient(180deg, rgba(17,17,17,0.96), rgba(10,10,10,1)); }
+    .panel { background:rgba(17,17,17,0.96); border:1px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:0 18px 40px rgba(0,0,0,0.32); }
+    .empty-state { display:grid; place-items:center; text-align:center; min-height:320px; padding:24px; }
+    .empty-state h2 { margin:0 0 8px; font-size:28px; }
+    .empty-state p { margin:0 0 16px; color:var(--muted); max-width:500px; line-height:1.5; }
+    .table-wrap { overflow:auto; }
+    table { width:100%; border-collapse:collapse; min-width:760px; }
+    th, td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+    th { color:var(--muted); background:rgba(255,255,255,0.02); text-transform:uppercase; letter-spacing:0.08em; font-size:11px; position:sticky; top:0; z-index:1; }
+    tbody tr:hover { background:rgba(200,241,53,0.04); }
+    tbody tr.track-row { cursor:pointer; }
+    tbody tr.track-row.active { background:rgba(200,241,53,0.08); }
+    .track-name { font-weight:600; color:var(--text); }
+    .player-bar { position:fixed; left:0; right:0; bottom:0; display:flex; align-items:center; gap:14px; padding:12px 16px; border-top:1px solid var(--border); background:rgba(10,10,10,0.96); backdrop-filter:blur(10px); box-shadow:0 -12px 30px rgba(0,0,0,0.35); z-index:5; }
+    .player-meta { min-width:220px; }
+    .player-meta strong { display:block; font-size:13px; color:var(--text); }
+    .player-meta span { display:block; font-size:12px; color:var(--muted); }
+    .metadata-info { display:block; margin-top:2px; font-size:11px; color:var(--muted); line-height:1.35; }
+    .player-controls { display:flex; align-items:center; gap:10px; flex:1; }
+    .player-progress { display:flex; align-items:center; gap:10px; flex:1; }
+    .player-progress input[type="range"] { flex:1; accent-color: var(--accent); }
+    .time-label { color:var(--muted); font-size:12px; min-width:72px; text-align:center; }
+    .volume-wrap { display:flex; align-items:center; gap:8px; min-width:160px; }
+    .volume-wrap input[type="range"] { flex:1; accent-color: var(--accent); }
+    .chip { display:inline-flex; align-items:center; border-radius:999px; padding:6px 8px; border:1px solid rgba(200,241,53,0.16); color:var(--accent); background:rgba(200,241,53,0.08); text-transform:uppercase; letter-spacing:0.08em; font-size:10px; }
+    .muted { color:var(--muted); }
+    .player-artwork { width:56px; height:56px; border-radius:8px; object-fit:cover; background:var(--surface-2); border:1px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .player-artwork-placeholder { width:56px; height:56px; border-radius:8px; background:var(--surface-2); border:1px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--muted); }
+    .track-art { width:32px; height:32px; border-radius:4px; object-fit:cover; background:var(--surface-2); border:1px solid var(--border); display:block; }
+    .track-art-placeholder { width:32px; height:32px; border-radius:4px; background:var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--border); }
+    td.art-cell { width:44px; padding:6px 8px 6px 14px; }
+    td.copy-cell { width:36px; padding:6px 8px; text-align:right; }
+    .copy-row-btn { display:none; border:1px solid rgba(200,241,53,0.22); background:transparent; color:var(--accent); border-radius:7px; padding:4px 8px; font-size:11px; cursor:pointer; white-space:nowrap; line-height:1; }
+    tbody tr:hover .copy-row-btn { display:inline-flex; align-items:center; gap:4px; }
+    .copy-player-btn { border:1px solid rgba(200,241,53,0.22); background:transparent; color:var(--accent); border-radius:10px; padding:8px 13px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0; -webkit-app-region:no-drag; }
+    .copy-player-btn:hover { background:rgba(200,241,53,0.08); }
+    /* Transfer toast */
+    .transfer-toast { position:fixed; bottom:120px; right:20px; width:300px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:0 12px 36px rgba(0,0,0,0.5); z-index:20; display:flex; flex-direction:column; gap:10px; }
+    .transfer-toast[hidden] { display:none; }
+    .transfer-toast-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .transfer-toast-title { font-size:13px; font-weight:600; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .toast-close { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; padding:0; }
+    .toast-close:hover { color:var(--text); }
+    .transfer-track-name { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .transfer-bar-wrap { height:6px; background:rgba(255,255,255,0.07); border-radius:999px; overflow:hidden; }
+    .transfer-bar-fill { height:100%; border-radius:999px; background:var(--accent); width:0%; transition:width 0.1s linear; }
+    .transfer-status { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+    .transfer-status.success { color:#6ee786; }
+    .transfer-status.error { color:#ff6b6b; }
+    /* Export Catalogue feedback */
+    .catalogue-msg { font-size:12px; padding:0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px; }
+    .catalogue-msg[hidden] { display:none; }
+    .catalogue-msg.success { color:#6ee786; }
+    .catalogue-msg.error   { color:#ff6b6b; }
+    /* Folder copy toast */
+    .folder-copy-toast { position:fixed; bottom:120px; right:20px; width:340px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:0 12px 36px rgba(0,0,0,0.5); z-index:20; display:flex; flex-direction:column; gap:10px; }
+    .folder-copy-toast[hidden] { display:none; }
+    .folder-copy-toast-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .folder-copy-toast-title { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+    .folder-copy-file { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .folder-copy-count { font-size:11px; color:var(--muted); }
+    .folder-copy-status { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+    .folder-copy-status.success { color:#6ee786; }
+    .folder-copy-status.error   { color:#ff6b6b; }
+    /* Update banner */
+    .update-banner { position:fixed; top:0; left:0; right:0; z-index:60; display:flex; align-items:center; gap:12px; padding:10px 20px; background:rgba(26,36,10,0.97); border-bottom:1px solid rgba(200,241,53,0.45); backdrop-filter:blur(12px); box-shadow:0 4px 24px rgba(0,0,0,0.5); transform:translateY(-100%); transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+    .update-banner.visible { transform:translateY(0); }
+    .update-banner-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px rgba(200,241,53,0.6); flex-shrink:0; animation:upd-pulse 1.8s ease-in-out infinite; }
+    @keyframes upd-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+    .update-banner-text { flex:1; font-size:13px; font-weight:600; color:var(--text); min-width:0; }
+    .update-banner-text span { color:var(--accent); }
+    .update-banner-sub { font-size:11px; color:var(--muted); margin-top:1px; font-weight:400; }
+    .update-banner-progress { width:100%; height:2px; background:rgba(200,241,53,0.12); border-radius:999px; overflow:hidden; margin-top:5px; }
+    .update-banner-progress-fill { height:100%; background:var(--accent); border-radius:999px; width:0%; transition:width 0.3s linear; }
+    .update-install-btn { border:1px solid rgba(200,241,53,0.5); background:rgba(200,241,53,0.12); color:var(--accent); border-radius:8px; padding:6px 16px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background 0.15s; }
+    .update-install-btn:hover { background:rgba(200,241,53,0.22); }
+    .update-dismiss-btn { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
+    .update-dismiss-btn:hover { color:var(--text); }
+    /* USB drive banner */
+    .drive-banner { position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center; gap:12px; padding:11px 20px; background:rgba(17,17,17,0.97); border-bottom:1px solid rgba(200,241,53,0.28); backdrop-filter:blur(12px); box-shadow:0 4px 24px rgba(0,0,0,0.4); transform:translateY(-100%); transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1); }
+    .drive-banner.visible { transform:translateY(0); }
+    .drive-banner-icon { font-size:18px; flex-shrink:0; }
+    .drive-banner-text { flex:1; font-size:13px; font-weight:600; color:var(--text); min-width:0; }
+    .drive-banner-text span { color:var(--accent); }
+    .drive-banner-sub { font-size:11px; color:var(--muted); font-weight:400; margin-top:1px; }
+    .drive-banner-actions { display:flex; gap:8px; flex-shrink:0; }
+    .drive-banner-load { border:1px solid rgba(200,241,53,0.4); background:rgba(200,241,53,0.1); color:var(--accent); border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; }
+    .drive-banner-load:hover { background:rgba(200,241,53,0.2); }
+    .drive-banner-dismiss { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
+    .drive-banner-dismiss:hover { color:var(--text); }
+    .drive-banner-progress { width:100%; height:2px; background:rgba(200,241,53,0.12); border-radius:999px; overflow:hidden; margin-top:4px; }
+    .drive-banner-progress-fill { height:100%; background:var(--accent); border-radius:999px; transition:width 10s linear; width:100%; }
+    /* View tabs */
+    .view-tabs { display:flex; gap:4px; }
+    .btn-tab { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:10px; padding:10px 16px; cursor:pointer; font-size:13px; font-weight:600; -webkit-app-region:no-drag; transition:color 0.12s, background 0.12s, border-color 0.12s; }
+    .btn-tab:hover { color:var(--text); border-color:rgba(200,241,53,0.22); }
+    .btn-tab.active { background:rgba(200,241,53,0.1); border-color:rgba(200,241,53,0.35); color:var(--accent); }
+    /* Sets view */
+    .sets-empty { display:grid; place-items:center; text-align:center; min-height:320px; padding:24px; }
+    .sets-empty[hidden] { display:none; }
+    .sets-empty h2 { margin:0 0 8px; font-size:24px; }
+    .sets-empty p { margin:0; color:var(--muted); max-width:400px; line-height:1.5; }
+    .set-filename { font-weight:600; color:var(--text); }
+    .set-label { display:inline-block; margin-top:3px; font-size:11px; color:var(--accent); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* Drive grouping in Sets view */
+    .drive-group-header td { padding:18px 16px 8px; background:transparent; border-bottom:1px solid var(--border); pointer-events:none; }
+    .drive-group-header:first-child td { padding-top:10px; }
+    .drive-badge { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:3px 10px; border-radius:20px; border-width:1px; border-style:solid; }
+    .drive-badge-icon { font-size:12px; }
+    .drive-count { font-weight:400; opacity:0.7; margin-left:2px; }
+    .tag-set-btn { display:inline-flex; align-items:center; gap:4px; border:1px solid rgba(200,241,53,0.22); background:transparent; color:var(--accent); border-radius:7px; padding:5px 10px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .tag-set-btn:hover { background:rgba(200,241,53,0.08); }
+    td.action-cell { width:1%; white-space:nowrap; padding:8px 14px; }
+    .scanning-indicator { display:flex; align-items:center; gap:10px; padding:14px 18px; color:var(--muted); font-size:13px; }
+    .scanning-indicator[hidden] { display:none; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+    /* Tag Set modal */
+    .modal-field input[type="date"] { color-scheme:dark; }
+    .field-hint { font-size:10px; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:400; margin-left:4px; }
+    .dest-row { display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:6px 6px 6px 12px; min-height:40px; }
+    .dest-path { flex:1; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; font-style:italic; }
+    .dest-path.chosen { color:var(--text); font-style:normal; }
+    .dest-choose-btn { flex-shrink:0; border:1px solid rgba(200,241,53,0.22); background:transparent; color:var(--accent); border-radius:7px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .dest-choose-btn:hover { background:rgba(200,241,53,0.08); }
+    .export-progress-wrap { display:flex; flex-direction:column; gap:6px; }
+    /* Metadata editor modal */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:30; display:flex; align-items:center; justify-content:center; padding:24px; backdrop-filter:blur(4px); }
+    .modal-backdrop[hidden] { display:none; }
+    .modal { background:var(--surface); border:1px solid var(--border); border-radius:18px; width:100%; max-width:540px; box-shadow:0 24px 64px rgba(0,0,0,0.6); display:flex; flex-direction:column; overflow:hidden; }
+    .modal-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 24px 16px; border-bottom:1px solid var(--border); }
+    .modal-header-text { min-width:0; }
+    .modal-title { margin:0; font-size:16px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .modal-subtitle { margin:4px 0 0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .modal-close { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:20px; line-height:1; padding:0; flex-shrink:0; margin-top:1px; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; overflow-y:auto; }
+    .modal-field { display:flex; flex-direction:column; gap:6px; }
+    .modal-field.full-width { grid-column:1 / -1; }
+    .modal-field label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; }
+    .modal-field input { background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-size:13px; outline:none; transition:border-color 0.15s; }
+    .modal-field input:focus { border-color:var(--accent); }
+    .modal-field input:disabled { opacity:0.45; cursor:not-allowed; }
+    .modal-field input[readonly] { background:#111; border-color:transparent; color:var(--muted); cursor:default; }
+    .modal-format-note { grid-column:1 / -1; font-size:12px; color:#ff9f43; background:rgba(255,159,67,0.08); border:1px solid rgba(255,159,67,0.2); border-radius:8px; padding:8px 12px; }
+    .modal-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px; border-top:1px solid var(--border); }
+    .modal-footer-msg { font-size:12px; flex:1; }
+    .modal-footer-msg.success { color:#6ee786; }
+    .modal-footer-msg.error   { color:#ff6b6b; }
+    .modal-actions { display:flex; gap:10px; }
+    /* Match History modal */
+    .mh-modal { max-width:720px !important; }
+    .mh-session-bar { display:flex; align-items:center; gap:10px; padding:12px 24px; border-bottom:1px solid var(--border); background:var(--surface); }
+    .mh-session-bar label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; white-space:nowrap; }
+    .mh-session-select { flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:7px 10px; color:var(--text); font-size:13px; outline:none; cursor:pointer; }
+    .mh-session-select:focus { border-color:var(--accent); }
+    .mh-badge { font-size:10px; background:rgba(200,241,53,0.12); color:var(--accent); border:1px solid rgba(200,241,53,0.3); border-radius:20px; padding:2px 8px; white-space:nowrap; flex-shrink:0; }
+    .mh-body { padding:0; overflow-y:auto; max-height:52vh; }
+    .mh-scanning { display:flex; align-items:center; gap:12px; padding:32px 24px; color:var(--muted); font-size:13px; }
+    .mh-empty { padding:32px 24px; text-align:center; color:var(--muted); font-size:13px; }
+    .mh-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .mh-table thead th { position:sticky; top:0; background:var(--surface); padding:10px 16px; text-align:left; font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; border-bottom:1px solid var(--border); }
+    .mh-table th:first-child, .mh-table td:first-child { width:40px; text-align:right; color:var(--muted); padding-right:8px; }
+    .mh-table td { padding:8px 16px; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .mh-table tbody tr:last-child td { border-bottom:none; }
+    .mh-table td.muted { color:var(--muted); }
+    .mh-table td.bpm { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  </style>
+</head>
+<body>
+  <!-- Update notification banner (z-index 60, above drive banner) -->
+  <div id="updateBanner" class="update-banner" role="alert" aria-live="polite">
+    <div class="update-banner-dot"></div>
+    <div style="flex:1;min-width:0">
+      <div class="update-banner-text" id="updateBannerText">Update available</div>
+      <div class="update-banner-sub" id="updateBannerSub">Downloading…</div>
+      <div class="update-banner-progress"><div class="update-banner-progress-fill" id="updateProgressFill"></div></div>
+    </div>
+    <button class="update-install-btn" id="updateInstallBtn" type="button" hidden>Restart &amp; Install</button>
+    <button class="update-dismiss-btn" id="updateDismissBtn" type="button">Later</button>
+  </div>
+
+  <!-- USB drive notification banner -->
+  <div id="driveBanner" class="drive-banner" role="alert" aria-live="polite">
+    <span class="drive-banner-icon" id="driveBannerIcon">💾</span>
+    <div style="flex:1;min-width:0">
+      <div class="drive-banner-text" id="driveBannerText"></div>
+      <div class="drive-banner-sub" id="driveBannerSub"></div>
+      <div class="drive-banner-progress" id="driveBannerProgressWrap"><div class="drive-banner-progress-fill" id="driveBannerProgressFill"></div></div>
+    </div>
+    <div class="drive-banner-actions" id="driveBannerActions">
+      <button class="drive-banner-load" id="driveBannerLoad" type="button">Load Library</button>
+      <button class="drive-banner-dismiss" id="driveBannerDismiss" type="button">Dismiss</button>
+    </div>
+  </div>
+  <div class="app-shell">
+    <header>
+      <div class="brand"><span class="brand-badge"></span><div><h1>M13</h1><p>DJ library & discovery</p></div></div>
+      <button id="openLibraryBtn" class="btn btn-primary" type="button">Open Library</button>
+    </header>
+    <section class="toolbar">
+      <div class="view-tabs">
+        <button id="libraryTabBtn" class="btn-tab active" type="button">Library</button>
+        <button id="setsTabBtn" class="btn-tab" type="button">Sets</button>
+        <button id="historyTabBtn" class="btn-tab" type="button">History</button>
+      </div>
+      <button id="refreshBtn" class="btn" type="button">Refresh</button>
+      <button id="rekordboxBtn" class="btn" type="button">📀 Rekordbox</button>
+      <button id="exportCatalogueBtn" class="btn" type="button">Export Catalogue</button>
+      <span id="exportCatalogueMsg" class="catalogue-msg" hidden></span>
+      <button id="copyFolderBtn" class="btn" type="button">Copy Folder</button>
+      <label class="search-box" for="searchInput"><span>🔎</span><input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre, folder…" /></label>
+    </section>
+
+    <!-- Library filter bar -->
+    <section id="libraryFilters" class="filter-bar" hidden>
+      <div class="filter-group">
+        <span class="filter-group-label">Format</span>
+        <button class="filter-pill active" data-filter="format" data-value="">All</button>
+        <button class="filter-pill" data-filter="format" data-value=".aiff">AIFF</button>
+        <button class="filter-pill" data-filter="format" data-value=".mp3">MP3</button>
+        <button class="filter-pill" data-filter="format" data-value=".wav">WAV</button>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <span class="filter-group-label">BPM</span>
+        <button class="filter-pill active" data-filter="bpm" data-value="">Any</button>
+        <button class="filter-pill" data-filter="bpm" data-value="slow">Slow &lt;100</button>
+        <button class="filter-pill" data-filter="bpm" data-value="mid">Mid 100–125</button>
+        <button class="filter-pill" data-filter="bpm" data-value="fast">Fast &gt;125</button>
+      </div>
+    </section>
+
+    <!-- Library stats -->
+    <section id="libraryStats" class="stats">
+      <span class="stat-chip">Tracks: <strong id="trackCount">0</strong></span>
+      <span class="stat-chip">Library size: <strong id="librarySize">0 MB</strong></span>
+      <span class="stat-chip">Formats: <strong id="formatCount">0</strong></span>
+    </section>
+    <!-- History stats -->
+    <section id="historyStats" class="stats" hidden>
+      <span class="stat-chip">Sessions: <strong id="historySessionCount">0</strong></span>
+      <span class="stat-chip">Tracks played: <strong id="historyTrackCount">0</strong></span>
+    </section>
+    <!-- Sets stats -->
+    <section id="setsStats" class="stats" hidden>
+      <span class="stat-chip">Recordings: <strong id="setsCount">0</strong></span>
+      <span class="stat-chip">Total size: <strong id="setsTotalSize">—</strong></span>
+      <span class="stat-chip">Total duration: <strong id="setsTotalDuration">—</strong></span>
+    </section>
+
+    <main>
+      <!-- Library view -->
+      <section id="librarySection" class="panel">
+        <div id="emptyState" class="empty-state"><div><h2>Welcome to your DJ library</h2><p>Open a folder to scan for audio files and build your collection.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="emptyOpenBtn" class="btn btn-primary" type="button">Open Library</button><button id="emptyRekordboxBtn" class="btn" type="button">📀 Scan from Rekordbox</button></div></div></div>
+        <div id="tableWrap" class="table-wrap" hidden>
+          <table><thead><tr><th class="art-cell"></th><th>Track</th><th>Artist</th><th>BPM</th><th>Folder</th><th>Format</th><th>Size</th><th class="copy-cell"></th></tr></thead><tbody id="trackTableBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- History view -->
+      <section id="historySection" class="panel" hidden>
+        <div id="historyEmptyState" class="empty-state" hidden>
+          <div><h2>No history found</h2><p>Connect a USB drive containing Pioneer rekordbox data, then click Refresh.</p></div>
+        </div>
+        <div id="historyScanning" class="scanning-indicator" hidden>
+          <div class="spinner"></div>
+          <span>Scanning for rekordbox history…</span>
+        </div>
+        <div id="historyTableWrap" class="table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Session</th>
+                <th>Track</th>
+                <th>Artist</th>
+                <th>BPM</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Sets view -->
+      <section id="setsSection" class="panel" hidden>
+        <div id="setsEmptyState" class="sets-empty" hidden>
+          <div>
+            <h2>No recordings found</h2>
+            <p>Connect a USB drive containing a <strong>PIONEER REC</strong> folder, then click Refresh.</p>
+          </div>
+        </div>
+        <div id="setsScanning" class="scanning-indicator" hidden>
+          <div class="spinner"></div>
+          <span>Scanning for Pioneer recordings…</span>
+        </div>
+        <div id="setsTableWrap" class="table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>Filename</th>
+                <th>Duration</th>
+                <th>Size</th>
+                <th class="action-cell"></th>
+              </tr>
+            </thead>
+            <tbody id="setsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <aside id="playerBar" class="player-bar" hidden>
+      <audio id="audioPlayer" preload="metadata"></audio>
+      <div id="playerArtworkWrap" class="player-artwork-placeholder">♪</div>
+      <button id="playPauseBtn" class="btn btn-primary" type="button">Play</button>
+      <div class="player-meta">
+        <strong id="playerTitle">No track selected</strong>
+        <span id="playerSubtitle">Choose a track to start listening</span>
+        <span id="metadataInfo" class="metadata-info">Artist • BPM • Genre • Key</span>
+      </div>
+      <div class="player-controls">
+        <div class="player-progress">
+          <span id="currentTimeLabel" class="time-label">0:00</span>
+          <input id="progressBar" type="range" min="0" max="100" value="0" step="0.1" />
+          <span id="durationLabel" class="time-label">0:00</span>
+        </div>
+        <label class="volume-wrap" for="volumeControl">
+          <span class="muted">🔊</span>
+          <input id="volumeControl" type="range" min="0" max="1" step="0.01" value="0.8" />
+        </label>
+      </div>
+      <button id="copyPlayerBtn" class="copy-player-btn" type="button">Copy to…</button>
+    </aside>
+
+    <!-- Tag Set modal -->
+    <div id="tagSetModal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tagSetModalTitle" style="max-width:560px">
+        <div class="modal-header">
+          <div class="modal-header-text">
+            <h2 id="tagSetModalTitle" class="modal-title">Tag &amp; Export Recording</h2>
+            <p id="tagSetModalSubtitle" class="modal-subtitle"></p>
+          </div>
+          <button id="tagSetModalClose" class="modal-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-field full-width">
+            <label for="tsName">Set Name <span class="field-hint">(used as filename for the exported copy)</span></label>
+            <input id="tsName" type="text" autocomplete="off" placeholder="e.g. Fabric – Room 1 – Oct 2024" />
+          </div>
+          <div class="modal-field">
+            <label for="tsVenue">Venue</label>
+            <input id="tsVenue" type="text" autocomplete="off" placeholder="Fabric, Berghain…" />
+          </div>
+          <div class="modal-field">
+            <label for="tsDate">Date</label>
+            <input id="tsDate" type="date" />
+          </div>
+          <div class="modal-field">
+            <label for="tsGenre">Genre</label>
+            <input id="tsGenre" type="text" autocomplete="off" placeholder="Techno, House…" />
+          </div>
+          <div class="modal-field">
+            <label>BPM</label>
+            <input id="tsBpm" type="text" readonly tabindex="-1" placeholder="—" />
+          </div>
+          <div class="modal-field full-width">
+            <label for="tsNotes">Notes</label>
+            <input id="tsNotes" type="text" autocomplete="off" placeholder="Vibe, tracklist link, highlights…" />
+          </div>
+          <div class="modal-field full-width">
+            <label>Destination Folder</label>
+            <div class="dest-row">
+              <span id="tsDestPath" class="dest-path">No destination selected</span>
+              <button id="tsChooseDest" class="dest-choose-btn" type="button">Choose Destination</button>
+            </div>
+          </div>
+          <div id="tsProgressWrap" class="modal-field full-width export-progress-wrap" hidden>
+            <div class="transfer-bar-wrap"><div id="tsProgressFill" class="transfer-bar-fill"></div></div>
+            <div id="tsProgressLabel" class="transfer-status"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span id="tagSetMsg" class="modal-footer-msg"></span>
+          <div class="modal-actions">
+            <button id="tagSetCancel" class="btn" type="button">Cancel</button>
+            <button id="tagSetSave" class="btn btn-primary" type="button" disabled>Export &amp; Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match History modal -->
+    <div id="matchHistoryModal" class="modal-backdrop" hidden>
+      <div class="modal mh-modal" role="dialog" aria-modal="true" aria-labelledby="mhModalTitle">
+        <div class="modal-header">
+          <div class="modal-header-text">
+            <h2 id="mhModalTitle" class="modal-title">Match History</h2>
+            <p id="mhModalSubtitle" class="modal-subtitle"></p>
+          </div>
+          <button id="mhModalClose" class="modal-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div id="mhSessionBar" class="mh-session-bar" hidden>
+          <label for="mhSessionSelect">Session</label>
+          <select id="mhSessionSelect" class="mh-session-select"></select>
+          <span id="mhBestBadge" class="mh-badge" hidden>Best match</span>
+        </div>
+        <div class="mh-body" id="mhBody">
+          <div id="mhScanning" class="mh-scanning">
+            <div class="spinner"></div>
+            <span>Scanning Pioneer history…</span>
+          </div>
+          <div id="mhEmpty" class="mh-empty" hidden>No history sessions found on connected drives.</div>
+          <table id="mhTable" class="mh-table" hidden>
+            <thead><tr><th>#</th><th>Track</th><th>Artist</th><th>BPM</th></tr></thead>
+            <tbody id="mhTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <span id="mhMsg" class="modal-footer-msg"></span>
+          <div class="modal-actions">
+            <button id="mhClose" class="btn" type="button">Close</button>
+            <button id="mhCopy" class="btn" type="button" disabled>Copy Tracklist</button>
+            <button id="mhSave" class="btn btn-primary" type="button" disabled>Save as Tracklist</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata editor modal -->
+    <div id="metaModal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header">
+          <div class="modal-header-text">
+            <h2 id="modalTitle" class="modal-title">Edit Metadata</h2>
+            <p id="modalSubtitle" class="modal-subtitle"></p>
+          </div>
+          <button id="modalClose" class="modal-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p id="modalFormatNote" class="modal-format-note" hidden></p>
+          <div class="modal-field full-width">
+            <label for="mfTitle">Title</label>
+            <input id="mfTitle" type="text" autocomplete="off" />
+          </div>
+          <div class="modal-field">
+            <label for="mfArtist">Artist</label>
+            <input id="mfArtist" type="text" autocomplete="off" />
+          </div>
+          <div class="modal-field">
+            <label for="mfAlbum">Album</label>
+            <input id="mfAlbum" type="text" autocomplete="off" />
+          </div>
+          <div class="modal-field">
+            <label for="mfGenre">Genre</label>
+            <input id="mfGenre" type="text" autocomplete="off" />
+          </div>
+          <div class="modal-field">
+            <label for="mfYear">Year</label>
+            <input id="mfYear" type="text" autocomplete="off" maxlength="4" />
+          </div>
+          <div class="modal-field">
+            <label for="mfBpm">BPM</label>
+            <input id="mfBpm" type="text" readonly tabindex="-1" />
+          </div>
+          <div class="modal-field">
+            <label for="mfKey">Key</label>
+            <input id="mfKey" type="text" autocomplete="off" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span id="modalMsg" class="modal-footer-msg"></span>
+          <div class="modal-actions">
+            <button id="modalCancel" class="btn" type="button">Cancel</button>
+            <button id="modalSave" class="btn btn-primary" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Folder copy toast -->
+    <div id="folderCopyToast" class="folder-copy-toast" hidden>
+      <div class="folder-copy-toast-header">
+        <span id="folderCopyTitle" class="folder-copy-toast-title">Copying folder…</span>
+        <button id="folderCopyClose" class="toast-close" type="button">✕</button>
+      </div>
+      <div id="folderCopyFile" class="folder-copy-file"></div>
+      <div id="folderCopyCount" class="folder-copy-count"></div>
+      <div class="transfer-bar-wrap"><div id="folderCopyBarFill" class="transfer-bar-fill"></div></div>
+      <div id="folderCopyStatus" class="folder-copy-status"></div>
+    </div>
+
+    <!-- Transfer toast -->
+    <div id="transferToast" class="transfer-toast" hidden>
+      <div class="transfer-toast-header">
+        <span id="transferToastTitle" class="transfer-toast-title">Copying track…</span>
+        <button id="transferToastClose" class="toast-close" type="button">✕</button>
+      </div>
+      <div id="transferTrackName" class="transfer-track-name"></div>
+      <div class="transfer-bar-wrap"><div id="transferBarFill" class="transfer-bar-fill"></div></div>
+      <div id="transferStatus" class="transfer-status"></div>
+    </div>
+  </div>
+  <script>
+    const trackTableBody = document.getElementById('trackTableBody');
+    const tableWrap = document.getElementById('tableWrap');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const trackCount = document.getElementById('trackCount');
+    const librarySize = document.getElementById('librarySize');
+    const formatCount = document.getElementById('formatCount');
+    const playerBar = document.getElementById('playerBar');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeLabel = document.getElementById('currentTimeLabel');
+    const durationLabel = document.getElementById('durationLabel');
+    const playerTitle = document.getElementById('playerTitle');
+    const playerSubtitle = document.getElementById('playerSubtitle');
+    const metadataInfo = document.getElementById('metadataInfo');
+    const volumeControl = document.getElementById('volumeControl');
+    let tracks = [];
+    let currentTrack = null;
+    const artworkCache = new Map();
+    async function fetchArtwork(filePath) {
+      if (artworkCache.has(filePath)) return artworkCache.get(filePath);
+      const url = await window.m13.getArtwork(filePath);
+      artworkCache.set(filePath, url);
+      return url;
+    }
+    let artObserver = null;
+    function observeArtCells() {
+      if (artObserver) artObserver.disconnect();
+      artObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const cell = entry.target;
+          const filePath = cell.dataset.artPath;
+          if (!filePath || cell.dataset.artLoaded) continue;
+          cell.dataset.artLoaded = '1';
+          artObserver.unobserve(cell);
+          fetchArtwork(filePath).then((url) => {
+            if (url) {
+              cell.innerHTML = `<img class="track-art" src="${url}" alt="" />`;
+            }
+          });
+        }
+      }, { rootMargin: '120px' });
+      document.querySelectorAll('.art-cell[data-art-path]').forEach((el) => artObserver.observe(el));
+    }
+    function formatSize(bytes) { if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes} B`; const units=['KB','MB','GB','TB']; let size=bytes/1024; let unitIndex=0; while (size >= 1024 && unitIndex < units.length - 1) { size/=1024; unitIndex += 1; } return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`; }
+    function formatTime(seconds) { const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0; const mins = Math.floor(safe / 60); const secs = safe % 60; return `${mins}:${String(secs).padStart(2, '0')}`; }
+    function updateActiveRow() { document.querySelectorAll('.track-row').forEach((row) => row.classList.toggle('active', row.dataset.trackPath === (currentTrack && currentTrack.path))); }
+    // ── Filter state ──────────────────────────────────────────────────────────
+    let activeFormat = '';   // '' | '.aiff' | '.mp3' | '.wav'
+    let activeBpm    = '';   // '' | 'slow' | 'mid' | 'fast'
+
+    const libraryFilters = document.getElementById('libraryFilters');
+
+    libraryFilters.addEventListener('click', (e) => {
+      const pill = e.target.closest('.filter-pill');
+      if (!pill) return;
+      const { filter, value } = pill.dataset;
+      if (filter === 'format') activeFormat = value;
+      if (filter === 'bpm')    activeBpm    = value;
+      // Update active class within this filter group
+      pill.closest('.filter-group').querySelectorAll('.filter-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.value === value);
+      });
+      renderTracks(tracks);
+    });
+
+    function matchesBpmRange(track, range) {
+      if (!range) return true;
+      const bpm = parseFloat(track.bpm);
+      if (!bpm) return false;
+      if (range === 'slow') return bpm < 100;
+      if (range === 'mid')  return bpm >= 100 && bpm <= 125;
+      if (range === 'fast') return bpm > 125;
+      return true;
+    }
+
+    function renderTracks(list) {
+      const term = searchInput.value.trim().toLowerCase();
+      const filtered = list.filter((track) => {
+        if (activeFormat && track.ext.toLowerCase() !== activeFormat) return false;
+        if (!matchesBpmRange(track, activeBpm)) return false;
+        if (!term) return true;
+        // Include filename so artist-in-filename (e.g. "Monkey Safari - Go.aiff") is searchable
+        // even when the artist ID3 tag is empty. Coerce bpm to string for the join.
+        const haystack = [
+          track.name, track.filename, track.artist,
+          String(track.bpm ?? ''), track.key, track.genre, track.folder,
+        ].join(' ').toLowerCase();
+        return haystack.includes(term);
+      });
+
+      console.log(
+        `[M13 search] term="${term}" format="${activeFormat}" bpm="${activeBpm}"`,
+        `→ ${filtered.length}/${list.length} tracks`,
+        list.length > 0 ? `\nSample track[0]:` : '',
+        list[0] ? { name: list[0].name, filename: list[0].filename, artist: list[0].artist,
+                     bpm: list[0].bpm, key: list[0].key, genre: list[0].genre } : '',
+      );
+
+      const hasLibrary = list.length > 0;
+      const hasTracks  = filtered.length > 0;
+      const isFiltered = !!term || !!activeFormat || !!activeBpm;
+
+      emptyState.hidden     = hasLibrary;           // "open a folder" only when no library
+      tableWrap.hidden      = !hasLibrary;           // always show table once library loaded
+      libraryFilters.hidden = !hasLibrary || currentView !== 'library';
+
+      if (!hasTracks && hasLibrary) {
+        // Show a no-results row rather than a blank table body
+        const colspan = 8;
+        trackTableBody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">${
+          isFiltered ? 'No tracks match your search or filters.' : 'No tracks found in this folder.'
+        }</td></tr>`;
+      } else {
+        trackTableBody.innerHTML = filtered.map((track) => {
+          const cachedArt = artworkCache.get(track.path);
+          const artCell = cachedArt
+            ? `<td class="art-cell"><img class="track-art" src="${cachedArt}" alt="" /></td>`
+            : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder">♪</div></td>`;
+          return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted">${track.folder}</td><td><span class="chip">${track.ext.replace('.', '').toUpperCase()}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></td></tr>`;
+        }).join('');
+      }
+
+      const totalSize = filtered.reduce((sum, t) => sum + (t.size || 0), 0);
+      trackCount.textContent  = String(filtered.length);
+      librarySize.textContent = formatSize(totalSize);
+      formatCount.textContent = String(new Set(filtered.map(t => t.ext.toLowerCase())).size);
+      observeArtCells();
+    }
+
+    let currentLibraryFolder = null;
+    async function loadFolder(folderPath) {
+      const scanned = await window.m13.scanFolder(folderPath);
+      tracks = Array.isArray(scanned) ? scanned : [];
+      // Expose on window so DevTools console can inspect at any time: window._m13.tracks
+      window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
+      console.log(`[M13] Loaded ${tracks.length} tracks from "${folderPath}"`);
+      console.log('[M13] First track fields:', tracks[0]
+        ? JSON.stringify({ name: tracks[0].name, filename: tracks[0].filename,
+            artist: tracks[0].artist, bpm: tracks[0].bpm,
+            key: tracks[0].key, genre: tracks[0].genre, ext: tracks[0].ext })
+        : 'none');
+      currentLibraryFolder = folderPath;
+      renderTracks(tracks);
+      await window.m13.saveLastFolder(folderPath);
+    }
+
+    // Cmd+Shift+D: dump debug snapshot to console at any time
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'D' && e.metaKey && e.shiftKey) {
+        console.group('[M13 debug snapshot]');
+        console.log('tracks.length:', tracks.length);
+        console.log('currentLibraryFolder:', currentLibraryFolder);
+        console.log('activeFormat:', activeFormat, '  activeBpm:', activeBpm);
+        console.log('searchInput.value:', searchInput.value);
+        if (tracks.length > 0) {
+          console.log('tracks[0]:', JSON.stringify(tracks[0]));
+          console.log('tracks[1]:', JSON.stringify(tracks[1]));
+          const term = searchInput.value.trim().toLowerCase();
+          if (term) {
+            const hit = tracks.find(t =>
+              [t.name, t.filename, t.artist, String(t.bpm ?? ''), t.key, t.genre, t.folder]
+                .join(' ').toLowerCase().includes(term));
+            console.log(`First track matching "${term}":`, hit ? JSON.stringify(hit) : 'none');
+          }
+        }
+        console.groupEnd();
+      }
+    });
+    async function openLibrary() { const folderPath = await window.m13.selectFolder(); if (!folderPath) return; await loadFolder(folderPath); }
+    (async () => { const lastFolder = await window.m13.getLastFolder(); if (lastFolder) await loadFolder(lastFolder); })();
+    const playerArtworkWrap = document.getElementById('playerArtworkWrap');
+    function setPlayerArtwork(url) {
+      if (url) {
+        playerArtworkWrap.className = '';
+        playerArtworkWrap.innerHTML = `<img class="player-artwork" src="${url}" alt="" />`;
+      } else {
+        playerArtworkWrap.className = 'player-artwork-placeholder';
+        playerArtworkWrap.textContent = '♪';
+      }
+    }
+    async function playTrack(track) {
+      if (!track) return;
+      currentTrack = track;
+      playerBar.hidden = false;
+      playerTitle.textContent = track.name;
+      playerSubtitle.textContent = 'Loading metadata…';
+      metadataInfo.textContent = 'Artist • BPM • Genre • Key';
+      setPlayerArtwork(artworkCache.get(track.path) ?? null);
+      try {
+        const [audioUrl, metadata, artUrl] = await Promise.all([
+          window.m13.getAudioUrl(track.path),
+          window.m13.getMetadata(track.path),
+          fetchArtwork(track.path),
+        ]);
+        audioPlayer.src = audioUrl;
+        const parts = [
+          metadata.artist || 'Unknown artist',
+          metadata.bpm ? `BPM ${metadata.bpm}` : '',
+          metadata.genre || '',
+          metadata.key ? `Key ${metadata.key}` : '',
+        ].filter(Boolean);
+        playerSubtitle.textContent = metadata.artist || 'Unknown artist';
+        metadataInfo.textContent = parts.join(' • ');
+        setPlayerArtwork(artUrl);
+        const artCell = trackTableBody.querySelector(`td.art-cell[data-art-path="${CSS.escape(track.path)}"]`);
+        if (artCell && artUrl) {
+          artCell.innerHTML = `<img class="track-art" src="${artUrl}" alt="" />`;
+          delete artCell.dataset.artPath;
+        }
+      } catch (error) {
+        playerSubtitle.textContent = 'Unknown artist';
+        metadataInfo.textContent = 'No metadata available';
+      }
+      audioPlayer.volume = Number(volumeControl.value || 0.8);
+      try {
+        await audioPlayer.play();
+        playPauseBtn.textContent = 'Pause';
+      } catch (error) {
+        playPauseBtn.textContent = 'Play';
+      }
+      renderTracks(tracks);
+    }
+    function togglePlayback() {
+      if (!currentTrack) return;
+      if (audioPlayer.paused) {
+        audioPlayer.play().then(() => { playPauseBtn.textContent = 'Pause'; }).catch(() => {});
+      } else {
+        audioPlayer.pause();
+        playPauseBtn.textContent = 'Play';
+      }
+    }
+    function syncPlayerUI() {
+      currentTimeLabel.textContent = formatTime(audioPlayer.currentTime);
+      durationLabel.textContent = formatTime(audioPlayer.duration);
+      if (audioPlayer.duration) {
+        progressBar.max = String(audioPlayer.duration);
+        progressBar.value = String(audioPlayer.currentTime);
+      }
+      playPauseBtn.textContent = audioPlayer.paused ? 'Play' : 'Pause';
+    }
+    // ── View switching ───────────────────────────────────────────────────────
+    const librarySection = document.getElementById('librarySection');
+    const setsSection    = document.getElementById('setsSection');
+    const historySection = document.getElementById('historySection');
+    const libraryStats   = document.getElementById('libraryStats');
+    const setsStats      = document.getElementById('setsStats');
+    const historyStats   = document.getElementById('historyStats');
+    const libraryTabBtn  = document.getElementById('libraryTabBtn');
+    const setsTabBtn     = document.getElementById('setsTabBtn');
+    const historyTabBtn  = document.getElementById('historyTabBtn');
+    const setsScanning   = document.getElementById('setsScanning');
+    const setsEmptyState = document.getElementById('setsEmptyState');
+    const setsTableWrap  = document.getElementById('setsTableWrap');
+    const setsTableBody  = document.getElementById('setsTableBody');
+    const setsCount         = document.getElementById('setsCount');
+    const setsTotalSize     = document.getElementById('setsTotalSize');
+    const setsTotalDuration = document.getElementById('setsTotalDuration');
+    const historyScanning   = document.getElementById('historyScanning');
+    const historyEmptyState = document.getElementById('historyEmptyState');
+    const historyTableWrap  = document.getElementById('historyTableWrap');
+    const historyTableBody  = document.getElementById('historyTableBody');
+
+    let currentView = 'library'; // 'library' | 'sets' | 'history'
+    let sets = [];
+    let setsLoaded = false;
+    let historyLoaded = false;
+    let setTagsCache = new Map(); // filePath → { label, notes }
+
+    function switchView(view) {
+      currentView = view;
+      const isLibrary = view === 'library';
+      const isSets    = view === 'sets';
+      const isHistory = view === 'history';
+
+      libraryTabBtn.classList.toggle('active', isLibrary);
+      setsTabBtn.classList.toggle('active', isSets);
+      historyTabBtn.classList.toggle('active', isHistory);
+
+      librarySection.hidden = !isLibrary;
+      setsSection.hidden    = !isSets;
+      historySection.hidden = !isHistory;
+      libraryStats.hidden   = !isLibrary;
+      setsStats.hidden      = !isSets;
+      historyStats.hidden   = !isHistory;
+
+      // Show/hide controls that only apply to the library view
+      searchInput.closest('label').style.display = isLibrary ? '' : 'none';
+      libraryFilters.hidden = !isLibrary;
+      document.getElementById('exportCatalogueBtn').hidden = !isLibrary;
+      document.getElementById('copyFolderBtn').hidden = !isLibrary;
+      if (!isLibrary) { const m = document.getElementById('exportCatalogueMsg'); m.hidden = true; m.textContent = ''; }
+
+      if (isSets && !setsLoaded) refreshSets();
+      if (isHistory && !historyLoaded) refreshHistory();
+    }
+
+    // ── Sets scanning & rendering ─────────────────────────────────────────────
+    function formatDuration(seconds) {
+      const s = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+
+    // Palette of drive colours — cycles if more than 5 drives connected
+    const DRIVE_COLORS = [
+      { bg: 'rgba(200,241,53,0.10)',  border: 'rgba(200,241,53,0.35)',  text: '#c8f135' },
+      { bg: 'rgba(100,180,255,0.10)', border: 'rgba(100,180,255,0.35)', text: '#64b4ff' },
+      { bg: 'rgba(255,140,100,0.10)', border: 'rgba(255,140,100,0.35)', text: '#ff8c64' },
+      { bg: 'rgba(180,130,255,0.10)', border: 'rgba(180,130,255,0.35)', text: '#b482ff' },
+      { bg: 'rgba(80,220,180,0.10)',  border: 'rgba(80,220,180,0.35)',  text: '#50dcb4' },
+    ];
+
+    function renderSets() {
+      if (sets.length === 0) {
+        setsEmptyState.hidden = false;
+        setsTableWrap.hidden  = true;
+      } else {
+        setsEmptyState.hidden = true;
+        setsTableWrap.hidden  = false;
+
+        // Group by drive (volume name), preserving newest-first order within each group
+        const driveOrder = [];
+        const byDrive = new Map();
+        for (const s of sets) {
+          if (!byDrive.has(s.volume)) { driveOrder.push(s.volume); byDrive.set(s.volume, []); }
+          byDrive.get(s.volume).push(s);
+        }
+
+        // Assign a stable colour index per drive name
+        const driveColorIdx = new Map();
+        driveOrder.forEach((vol, i) => driveColorIdx.set(vol, i % DRIVE_COLORS.length));
+
+        const rows = [];
+        for (const vol of driveOrder) {
+          const driveSets = byDrive.get(vol);
+          const col = DRIVE_COLORS[driveColorIdx.get(vol)];
+
+          // Group header row
+          rows.push(`<tr class="drive-group-header">
+            <td colspan="4">
+              <span class="drive-badge" style="background:${col.bg};border-color:${col.border};color:${col.text}">
+                <span class="drive-badge-icon">💾</span>${vol}<span class="drive-count">${driveSets.length} recording${driveSets.length !== 1 ? 's' : ''}</span>
+              </span>
+            </td>
+          </tr>`);
+
+          for (const s of driveSets) {
+            const tags = setTagsCache.get(s.path) || {};
+            const labelHtml = tags.setName
+              ? `<br><span class="set-label">🏷 ${tags.setName}</span>`
+              : '';
+            rows.push(`<tr data-set-path="${s.path}">
+              <td><span class="set-filename">${s.filename}</span>${labelHtml}</td>
+              <td class="muted">${s.duration ? formatDuration(s.duration) : '—'}</td>
+              <td class="muted">${formatSize(s.size)}</td>
+              <td class="action-cell" style="display:flex;gap:6px;align-items:center">
+                <button class="tag-set-btn" data-set-path="${s.path}" type="button">🏷 Tag Set</button>
+                <button class="match-history-btn" data-set-path="${s.path}" data-duration="${s.duration || 0}" type="button">⏱ Match History</button>
+              </td>
+            </tr>`);
+          }
+        }
+
+        setsTableBody.innerHTML = rows.join('');
+      }
+
+      setsCount.textContent        = String(sets.length);
+      const totalSz  = sets.reduce((sum, s) => sum + (s.size || 0), 0);
+      const totalDur = sets.reduce((sum, s) => sum + (s.duration || 0), 0);
+      setsTotalSize.textContent     = sets.length ? formatSize(totalSz) : '—';
+      setsTotalDuration.textContent = sets.length ? formatDuration(totalDur) : '—';
+    }
+
+    async function refreshSets() {
+      setsScanning.hidden   = false;
+      setsEmptyState.hidden = true;
+      setsTableWrap.hidden  = true;
+
+      try {
+        const scanned = await window.m13.scanSets();
+        sets = Array.isArray(scanned) ? scanned : [];
+        setsLoaded = true;
+
+        // Pre-load cached tags for all sets so labels render immediately
+        await Promise.all(sets.map(async (s) => {
+          if (!setTagsCache.has(s.path)) {
+            const t = await window.m13.getSetTags(s.path);
+            setTagsCache.set(s.path, t);
+          }
+        }));
+      } catch {
+        sets = [];
+      } finally {
+        setsScanning.hidden = true;
+        renderSets();
+      }
+    }
+
+    // ── History scanning & rendering ──────────────────────────────────────────
+    async function refreshHistory() {
+      historyLoaded = false;
+      historyScanning.hidden = false;
+      historyEmptyState.hidden = true;
+      historyTableWrap.hidden = true;
+      try {
+        const { entries } = await window.m13.scanHistory();
+        historyScanning.hidden = true;
+        if (!entries || entries.length === 0) {
+          historyEmptyState.hidden = false;
+          return;
+        }
+        const sessions = new Set(entries.map(e => e.session));
+        document.getElementById('historySessionCount').textContent = sessions.size;
+        document.getElementById('historyTrackCount').textContent = entries.length;
+        historyTableBody.innerHTML = entries.map(e => `
+          <tr>
+            <td style="color:var(--muted);text-align:right;padding-right:8px">${e.playOrder}</td>
+            <td style="color:var(--muted);white-space:nowrap">${e.session}</td>
+            <td>${e.title || '—'}</td>
+            <td style="color:var(--muted)">${e.artist || '—'}</td>
+            <td style="white-space:nowrap">${e.bpm || '—'}</td>
+          </tr>`).join('');
+        historyTableWrap.hidden = false;
+        historyLoaded = true;
+      } catch (err) {
+        historyScanning.hidden = true;
+        historyEmptyState.hidden = false;
+        console.error('[M13] History scan error:', err);
+      }
+    }
+
+    libraryTabBtn.addEventListener('click', () => switchView('library'));
+    setsTabBtn.addEventListener('click',    () => switchView('sets'));
+    historyTabBtn.addEventListener('click', () => switchView('history'));
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      if (currentView === 'library') renderTracks(tracks);
+      else if (currentView === 'sets') refreshSets();
+      else if (currentView === 'history') { historyLoaded = false; refreshHistory(); }
+    });
+
+    // Sets table: Tag Set button delegation
+    setsTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tag-set-btn');
+      if (!btn) return;
+      const setPath = btn.dataset.setPath;
+      const set = sets.find(s => s.path === setPath);
+      if (set) openTagSetModal(set);
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Tag Set modal ─────────────────────────────────────────────────────────
+    const tagSetModal     = document.getElementById('tagSetModal');
+    const tagSetMsg       = document.getElementById('tagSetMsg');
+    const tagSetSave      = document.getElementById('tagSetSave');
+    const tsName          = document.getElementById('tsName');
+    const tsVenue         = document.getElementById('tsVenue');
+    const tsDate          = document.getElementById('tsDate');
+    const tsGenre         = document.getElementById('tsGenre');
+    const tsBpm           = document.getElementById('tsBpm');
+    const tsNotes         = document.getElementById('tsNotes');
+    const tsDestPath      = document.getElementById('tsDestPath');
+    const tsProgressWrap  = document.getElementById('tsProgressWrap');
+    const tsProgressFill  = document.getElementById('tsProgressFill');
+    const tsProgressLabel = document.getElementById('tsProgressLabel');
+    let tagSetTarget = null;
+    let tagSetDestFolder = null;
+    let removeExportProgressListener = null;
+
+    function updateExportBtn() {
+      tagSetSave.disabled = !tagSetDestFolder || !tsName.value.trim();
+    }
+
+    async function openTagSetModal(set) {
+      tagSetTarget    = set;
+      tagSetDestFolder = null;
+
+      document.getElementById('tagSetModalSubtitle').textContent =
+        [set.filename, set.volume,
+          set.duration ? formatDuration(set.duration) : null,
+          formatSize(set.size)].filter(Boolean).join('  ·  ');
+
+      tagSetMsg.textContent  = '';
+      tagSetMsg.className    = 'modal-footer-msg';
+      tsDestPath.textContent = 'No destination selected';
+      tsDestPath.className   = 'dest-path';
+      tsProgressWrap.hidden  = true;
+      tsProgressFill.style.width = '0%';
+      tagSetSave.disabled    = true;
+
+      // Populate fields from cache or IPC
+      let tags = setTagsCache.get(set.path) || null;
+      if (!tags) {
+        tags = await window.m13.getSetTags(set.path);
+        setTagsCache.set(set.path, tags);
+      }
+      tsName.value  = tags.setName || '';
+      tsVenue.value = tags.venue   || '';
+      tsDate.value  = tags.date    || '';
+      tsGenre.value = tags.genre   || '';
+      tsNotes.value = tags.notes   || '';
+
+      // Populate read-only BPM from the file's existing metadata tags
+      tsBpm.value = '';
+      window.m13.getMetadata(set.path).then((meta) => {
+        tsBpm.value = meta.bpm || '';
+      }).catch(() => {});
+
+      tagSetModal.hidden = false;
+      tsName.focus();
+    }
+
+    function closeTagSetModal() {
+      tagSetModal.hidden = true;
+      tagSetTarget     = null;
+      tagSetDestFolder = null;
+      if (removeExportProgressListener) {
+        removeExportProgressListener();
+        removeExportProgressListener = null;
+      }
+    }
+
+    document.getElementById('tsChooseDest').addEventListener('click', async () => {
+      const folder = await window.m13.selectDestFolder();
+      if (!folder) return;
+      tagSetDestFolder       = folder;
+      tsDestPath.textContent = folder;
+      tsDestPath.className   = 'dest-path chosen';
+      updateExportBtn();
+    });
+
+    tsName.addEventListener('input', updateExportBtn);
+
+    async function saveTagSet() {
+      if (!tagSetTarget || !tagSetDestFolder || !tsName.value.trim()) return;
+
+      const tags = {
+        setName:  tsName.value.trim(),
+        venue:    tsVenue.value.trim(),
+        date:     tsDate.value,
+        genre:    tsGenre.value.trim(),
+        notes:    tsNotes.value.trim(),
+      };
+
+      tagSetSave.disabled        = true;
+      tagSetMsg.textContent      = '';
+      tagSetMsg.className        = 'modal-footer-msg';
+      tsProgressWrap.hidden      = false;
+      tsProgressFill.style.width = '0%';
+      tsProgressLabel.textContent = 'Starting…';
+      tsProgressLabel.className   = 'transfer-status';
+
+      removeExportProgressListener = window.m13.onSetExportProgress(({ pct, transferred, total }) => {
+        tsProgressFill.style.width  = `${pct}%`;
+        tsProgressLabel.textContent = `${formatSize(transferred)} / ${formatSize(total)} — ${pct}%`;
+      });
+
+      const result = await window.m13.exportSet(tagSetTarget.path, tagSetDestFolder, tags.setName, tags);
+
+      if (removeExportProgressListener) {
+        removeExportProgressListener();
+        removeExportProgressListener = null;
+      }
+
+      if (result.success) {
+        tsProgressFill.style.width  = '100%';
+        tsProgressLabel.textContent = 'Complete';
+        tsProgressLabel.className   = 'transfer-status success';
+
+        // Persist tags to M13_Sets.json — WAV original never touched
+        const saveResult = await window.m13.saveSetTags(tagSetTarget.path, tags);
+        if (saveResult.success) {
+          setTagsCache.set(tagSetTarget.path, tags);
+          renderSets();
+        }
+
+        tagSetMsg.textContent = `✓ Exported to ${result.destPath}`;
+        tagSetMsg.className   = 'modal-footer-msg success';
+        // Leave modal open so user can read the destination path
+      } else {
+        tsProgressLabel.textContent = 'Failed';
+        tsProgressLabel.className   = 'transfer-status error';
+        tagSetMsg.textContent = `✗ ${result.error}`;
+        tagSetMsg.className   = 'modal-footer-msg error';
+        tagSetSave.disabled   = false; // allow retry
+      }
+    }
+
+    document.getElementById('tagSetModalClose').addEventListener('click', closeTagSetModal);
+    document.getElementById('tagSetCancel').addEventListener('click', closeTagSetModal);
+    tagSetSave.addEventListener('click', saveTagSet);
+    tagSetModal.addEventListener('click', (e) => { if (e.target === tagSetModal) closeTagSetModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !tagSetModal.hidden) closeTagSetModal(); });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Match History modal ───────────────────────────────────────────────────
+    const matchHistoryModal = document.getElementById('matchHistoryModal');
+    const mhSessionBar      = document.getElementById('mhSessionBar');
+    const mhSessionSelect   = document.getElementById('mhSessionSelect');
+    const mhBestBadge       = document.getElementById('mhBestBadge');
+    const mhScanning        = document.getElementById('mhScanning');
+    const mhEmpty           = document.getElementById('mhEmpty');
+    const mhTable           = document.getElementById('mhTable');
+    const mhTableBody       = document.getElementById('mhTableBody');
+    const mhMsg             = document.getElementById('mhMsg');
+    const mhSave            = document.getElementById('mhSave');
+    const mhCopy            = document.getElementById('mhCopy');
+
+    let mhTarget    = null; // current set object
+    let mhSessions  = [];   // [{playlistId, session, trackCount, entries}]
+    let mhBestMatch = null; // playlistId of best auto-match
+
+    function mhCurrentSession() {
+      const id = parseInt(mhSessionSelect.value, 10);
+      return mhSessions.find(s => s.playlistId === id) || null;
+    }
+
+    function mhRenderTracklist() {
+      const session = mhCurrentSession();
+      const hasTracks = session && session.entries.length > 0;
+      mhTable.hidden = !hasTracks;
+      mhEmpty.hidden = hasTracks || mhSessions.length > 0;
+      mhSave.disabled = !hasTracks;
+      mhCopy.disabled = !hasTracks;
+
+      if (!hasTracks) { mhTableBody.innerHTML = ''; return; }
+
+      mhTableBody.innerHTML = session.entries.map(e => `
+        <tr>
+          <td>${e.playOrder}</td>
+          <td>${e.title || '—'}</td>
+          <td class="muted">${e.artist || '—'}</td>
+          <td class="bpm muted">${e.bpm || '—'}</td>
+        </tr>`).join('');
+
+      const isBest = session.playlistId === mhBestMatch;
+      mhBestBadge.hidden = !isBest;
+    }
+
+    async function openMatchHistoryModal(set) {
+      mhTarget    = set;
+      mhSessions  = [];
+      mhBestMatch = null;
+
+      document.getElementById('mhModalSubtitle').textContent =
+        [set.filename, set.volume,
+          set.duration ? formatDuration(set.duration) : null].filter(Boolean).join('  ·  ');
+
+      mhMsg.textContent   = '';
+      mhMsg.className     = 'modal-footer-msg';
+      mhSessionBar.hidden = true;
+      mhScanning.hidden   = false;
+      mhEmpty.hidden      = true;
+      mhTable.hidden      = true;
+      mhSave.disabled     = true;
+      mhCopy.disabled     = true;
+      mhBestBadge.hidden  = true;
+      matchHistoryModal.hidden = false;
+
+      try {
+        const result = await window.m13.matchHistory({ filePath: set.path, duration: set.duration || 0 });
+        mhScanning.hidden = true;
+
+        if (!result.success || !result.sessions.length) {
+          mhEmpty.hidden = false;
+          return;
+        }
+
+        mhSessions  = result.sessions;
+        mhBestMatch = result.bestMatch;
+
+        // Populate session selector — newest first (already sorted)
+        mhSessionSelect.innerHTML = mhSessions.map(s =>
+          `<option value="${s.playlistId}">${s.session} (${s.trackCount} track${s.trackCount !== 1 ? 's' : ''})</option>`
+        ).join('');
+
+        if (mhBestMatch != null) {
+          mhSessionSelect.value = String(mhBestMatch);
+        }
+
+        mhSessionBar.hidden = false;
+        mhRenderTracklist();
+      } catch (err) {
+        mhScanning.hidden = true;
+        mhEmpty.hidden    = false;
+        console.error('[M13] matchHistory error:', err);
+      }
+    }
+
+    function closeMatchHistoryModal() {
+      matchHistoryModal.hidden = true;
+      mhTarget = null;
+    }
+
+    mhSessionSelect.addEventListener('change', mhRenderTracklist);
+
+    document.getElementById('mhModalClose').addEventListener('click', closeMatchHistoryModal);
+    document.getElementById('mhClose').addEventListener('click', closeMatchHistoryModal);
+    matchHistoryModal.addEventListener('click', (e) => { if (e.target === matchHistoryModal) closeMatchHistoryModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !matchHistoryModal.hidden) closeMatchHistoryModal(); });
+
+    mhCopy.addEventListener('click', () => {
+      const session = mhCurrentSession();
+      if (!session) return;
+      const text = session.entries.map(e =>
+        `${e.playOrder}. ${e.title}${e.artist ? ' — ' + e.artist : ''}${e.bpm ? ' [' + e.bpm + ' BPM]' : ''}`
+      ).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        mhMsg.textContent = '✓ Copied to clipboard';
+        mhMsg.className   = 'modal-footer-msg success';
+        setTimeout(() => { mhMsg.textContent = ''; mhMsg.className = 'modal-footer-msg'; }, 2500);
+      }).catch(() => {
+        mhMsg.textContent = '✗ Copy failed';
+        mhMsg.className   = 'modal-footer-msg error';
+      });
+    });
+
+    mhSave.addEventListener('click', async () => {
+      const session = mhCurrentSession();
+      if (!session || !mhTarget) return;
+      mhSave.disabled = true;
+      const result = await window.m13.saveTracklist({ filePath: mhTarget.path, tracklist: session.entries });
+      if (result.success) {
+        mhMsg.textContent = `✓ Tracklist saved (${session.entries.length} tracks)`;
+        mhMsg.className   = 'modal-footer-msg success';
+      } else {
+        mhMsg.textContent = `✗ ${result.error}`;
+        mhMsg.className   = 'modal-footer-msg error';
+        mhSave.disabled   = false;
+      }
+    });
+
+    // Delegate Match History button clicks in Sets table
+    setsTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.match-history-btn');
+      if (!btn) return;
+      const setPath = btn.dataset.setPath;
+      const set = sets.find(s => s.path === setPath);
+      if (set) openMatchHistoryModal(set);
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Metadata editor modal ────────────────────────────────────────────────
+    const metaModal      = document.getElementById('metaModal');
+    const modalTitle     = document.getElementById('modalTitle');
+    const modalSubtitle  = document.getElementById('modalSubtitle');
+    const modalFormatNote= document.getElementById('modalFormatNote');
+    const modalMsg       = document.getElementById('modalMsg');
+    const modalSave      = document.getElementById('modalSave');
+    const mfTitle  = document.getElementById('mfTitle');
+    const mfArtist = document.getElementById('mfArtist');
+    const mfAlbum  = document.getElementById('mfAlbum');
+    const mfGenre  = document.getElementById('mfGenre');
+    const mfYear   = document.getElementById('mfYear');
+    const mfBpm    = document.getElementById('mfBpm');
+    const mfKey    = document.getElementById('mfKey');
+
+    const WRITABLE_EXTS = new Set(['.mp3', '.wav', '.aif', '.aiff', '.flac']);
+    let modalTrack = null;
+
+    function openMetaModal(track) {
+      modalTrack = track;
+      modalTitle.textContent = 'Edit Metadata';
+      modalSubtitle.textContent = `${track.filename}  ·  ${track.folder}`;
+      modalMsg.textContent = '';
+      modalMsg.className = 'modal-footer-msg';
+
+      const ext = track.ext.toLowerCase();
+      const canWrite = WRITABLE_EXTS.has(ext);
+
+      if (!canWrite) {
+        modalFormatNote.textContent = `${ext.replace('.','').toUpperCase()} files are read-only — metadata writing is not supported for this format.`;
+        modalFormatNote.hidden = false;
+      } else {
+        modalFormatNote.hidden = true;
+      }
+
+      [mfTitle, mfArtist, mfAlbum, mfGenre, mfYear, mfKey].forEach(el => {
+        el.disabled = !canWrite;
+      });
+      modalSave.disabled = !canWrite;
+
+      // Pre-populate with placeholder while metadata loads
+      mfTitle.value  = track.name;
+      mfArtist.value = track.artist || '';
+      mfAlbum.value  = '';
+      mfGenre.value  = '';
+      mfYear.value   = '';
+      mfBpm.value    = track.bpm || '';
+      mfKey.value    = '';
+
+      metaModal.hidden = false;
+      mfTitle.focus();
+
+      // Load full metadata async and fill in remaining fields
+      window.m13.getMetadata(track.path).then((meta) => {
+        if (modalTrack !== track) return; // modal was closed/changed before response
+        mfTitle.value  = meta.title  || track.name;
+        mfArtist.value = meta.artist || '';
+        mfAlbum.value  = meta.album  || '';
+        mfGenre.value  = meta.genre  || '';
+        mfYear.value   = meta.year   || '';
+        mfBpm.value    = meta.bpm    || '';
+        mfKey.value    = meta.key    || '';
+      }).catch(() => {});
+    }
+
+    function closeMetaModal() {
+      metaModal.hidden = true;
+      modalTrack = null;
+    }
+
+    async function saveMetadata() {
+      if (!modalTrack || modalSave.disabled) return;
+      modalSave.disabled = true;
+      modalMsg.textContent = 'Saving…';
+      modalMsg.className = 'modal-footer-msg';
+
+      const fields = {
+        title:  mfTitle.value.trim(),
+        artist: mfArtist.value.trim(),
+        album:  mfAlbum.value.trim(),
+        year:   mfYear.value.trim(),
+        genre:  mfGenre.value.trim(),
+        key:    mfKey.value.trim(),
+      };
+
+      const result = await window.m13.saveMetadata(modalTrack.path, fields);
+
+      if (result.success) {
+        modalMsg.textContent = '✓ Saved successfully';
+        modalMsg.className = 'modal-footer-msg success';
+        // Update the in-memory track so the table reflects edits without a rescan
+        const t = tracks.find(tr => tr.path === modalTrack.path);
+        if (t) {
+          if (fields.title)  t.name   = fields.title;
+          if (fields.artist !== undefined) t.artist = fields.artist;
+          if (fields.bpm    !== undefined) t.bpm    = fields.bpm;
+          renderTracks(tracks);
+        }
+      } else {
+        modalMsg.textContent = `✗ ${result.error}`;
+        modalMsg.className = 'modal-footer-msg error';
+      }
+
+      modalSave.disabled = false;
+    }
+
+    document.getElementById('modalClose').addEventListener('click', closeMetaModal);
+    document.getElementById('modalCancel').addEventListener('click', closeMetaModal);
+    modalSave.addEventListener('click', saveMetadata);
+    metaModal.addEventListener('click', (e) => { if (e.target === metaModal) closeMetaModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !metaModal.hidden) closeMetaModal(); });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Transfer / copy ──────────────────────────────────────────────────────
+    const transferToast = document.getElementById('transferToast');
+    const transferToastTitle = document.getElementById('transferToastTitle');
+    const transferTrackName = document.getElementById('transferTrackName');
+    const transferBarFill = document.getElementById('transferBarFill');
+    const transferStatus = document.getElementById('transferStatus');
+    let copyInProgress = false;
+    let removeCopyProgressListener = null;
+
+    function showToast({ title, trackName, pct = 0, status = '', statusClass = '' }) {
+      transferToastTitle.textContent = title;
+      transferTrackName.textContent = trackName;
+      transferBarFill.style.width = `${pct}%`;
+      transferStatus.textContent = status;
+      transferStatus.className = `transfer-status${statusClass ? ` ${statusClass}` : ''}`;
+      transferToast.hidden = false;
+    }
+
+    function hideToast() {
+      transferToast.hidden = true;
+      transferBarFill.style.width = '0%';
+      if (removeCopyProgressListener) { removeCopyProgressListener(); removeCopyProgressListener = null; }
+      copyInProgress = false;
+    }
+
+    document.getElementById('transferToastClose').addEventListener('click', hideToast);
+
+    async function startCopy(srcPath, trackName) {
+      if (copyInProgress) return;
+      const destFolder = await window.m13.selectDestFolder();
+      if (!destFolder) return;
+
+      copyInProgress = true;
+      showToast({ title: 'Copying track…', trackName, pct: 0, status: 'Starting…' });
+
+      removeCopyProgressListener = window.m13.onCopyProgress(({ pct, transferred, total }) => {
+        showToast({
+          title: 'Copying track…',
+          trackName,
+          pct,
+          status: `${formatSize(transferred)} / ${formatSize(total)} — ${pct}%`,
+        });
+      });
+
+      const result = await window.m13.copyTrack(srcPath, destFolder);
+
+      if (removeCopyProgressListener) { removeCopyProgressListener(); removeCopyProgressListener = null; }
+      copyInProgress = false;
+
+      if (result.success) {
+        showToast({ title: 'Copy complete', trackName, pct: 100, status: `Saved to ${result.destPath}`, statusClass: 'success' });
+      } else {
+        showToast({ title: 'Copy failed', trackName, pct: 0, status: result.error, statusClass: 'error' });
+      }
+    }
+
+    // Copy button in player bar
+    document.getElementById('copyPlayerBtn').addEventListener('click', () => {
+      if (currentTrack) startCopy(currentTrack.path, currentTrack.name);
+    });
+
+    // Double-click on a row → open metadata editor
+    trackTableBody.addEventListener('dblclick', (event) => {
+      if (event.target.closest('.copy-row-btn')) return;
+      const row = event.target.closest('tr[data-track-path]');
+      if (!row) return;
+      const track = tracks.find(item => item.path === row.dataset.trackPath);
+      if (track) openMetaModal(track);
+    });
+
+    // Copy buttons in table rows (event delegation)
+    trackTableBody.addEventListener('click', (event) => {
+      const copyBtn = event.target.closest('.copy-row-btn');
+      if (copyBtn) {
+        event.stopPropagation();
+        startCopy(copyBtn.dataset.copyPath, copyBtn.dataset.copyName);
+        return;
+      }
+      const row = event.target.closest('tr[data-track-path]');
+      if (!row) return;
+      const track = tracks.find((item) => item.path === row.dataset.trackPath);
+      if (track) playTrack(track);
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+    playPauseBtn.addEventListener('click', togglePlayback);
+    progressBar.addEventListener('input', () => { if (audioPlayer.duration) audioPlayer.currentTime = Number(progressBar.value); });
+    volumeControl.addEventListener('input', () => { audioPlayer.volume = Number(volumeControl.value); });
+    audioPlayer.addEventListener('timeupdate', syncPlayerUI);
+    audioPlayer.addEventListener('loadedmetadata', syncPlayerUI);
+    audioPlayer.addEventListener('play', () => { playPauseBtn.textContent = 'Pause'; });
+    audioPlayer.addEventListener('pause', () => { playPauseBtn.textContent = 'Play'; });
+    audioPlayer.addEventListener('ended', () => { playPauseBtn.textContent = 'Play'; });
+    document.getElementById('openLibraryBtn').addEventListener('click', openLibrary);
+    document.getElementById('emptyOpenBtn').addEventListener('click', openLibrary);
+
+    async function scanRekordbox() {
+      const btn = document.getElementById('rekordboxBtn');
+      const emptyBtn = document.getElementById('emptyRekordboxBtn');
+      const origText = btn.textContent;
+      btn.textContent = '⏳ Scanning…';
+      btn.disabled = true;
+      if (emptyBtn) { emptyBtn.textContent = '⏳ Scanning…'; emptyBtn.disabled = true; }
+      try {
+        const result = await window.m13.scanRekordbox();
+        if (result.error) {
+          alert('Rekordbox scan failed: ' + result.error);
+          return;
+        }
+        tracks = result.tracks;
+        window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
+        currentLibraryFolder = 'rekordbox';
+        renderTracks(tracks);
+        console.log(`[M13] Loaded ${tracks.length} tracks from Rekordbox`);
+      } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+        if (emptyBtn) { emptyBtn.textContent = '📀 Scan from Rekordbox'; emptyBtn.disabled = false; }
+      }
+    }
+    document.getElementById('rekordboxBtn').addEventListener('click', scanRekordbox);
+    document.getElementById('emptyRekordboxBtn').addEventListener('click', scanRekordbox);
+
+    searchInput.addEventListener('input', () => renderTracks(tracks));
+
+    // ── Export Catalogue ──────────────────────────────────────────────────────
+    document.getElementById('exportCatalogueBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('exportCatalogueBtn');
+      const msg = document.getElementById('exportCatalogueMsg');
+
+      if (!currentLibraryFolder) {
+        msg.textContent = '✗ No library loaded';
+        msg.className = 'catalogue-msg error';
+        msg.hidden = false;
+        return;
+      }
+      if (tracks.length === 0) {
+        msg.textContent = '✗ Library is empty';
+        msg.className = 'catalogue-msg error';
+        msg.hidden = false;
+        return;
+      }
+
+      btn.disabled = true;
+      msg.textContent = 'Exporting…';
+      msg.className = 'catalogue-msg';
+      msg.hidden = false;
+
+      // Pass the full track list (all tracks, not the current search-filtered view)
+      const result = await window.m13.exportCatalogue(tracks, currentLibraryFolder);
+
+      btn.disabled = false;
+
+      if (result.success) {
+        msg.textContent = `✓ Saved to ${result.destPath}`;
+        msg.className = 'catalogue-msg success';
+      } else {
+        msg.textContent = `✗ ${result.error}`;
+        msg.className = 'catalogue-msg error';
+      }
+
+      // Auto-clear after 8 seconds
+      setTimeout(() => { msg.hidden = true; msg.textContent = ''; }, 8000);
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── Folder copy ───────────────────────────────────────────────────────────
+    const folderCopyToast   = document.getElementById('folderCopyToast');
+    const folderCopyTitle   = document.getElementById('folderCopyTitle');
+    const folderCopyFile    = document.getElementById('folderCopyFile');
+    const folderCopyCount   = document.getElementById('folderCopyCount');
+    const folderCopyBarFill = document.getElementById('folderCopyBarFill');
+    const folderCopyStatus  = document.getElementById('folderCopyStatus');
+    let folderCopyInProgress = false;
+    let removeFolderCopyListener = null;
+
+    function showFolderCopyToast({ title, filename = '', count = '', pct = 0, status = '', statusClass = '' }) {
+      folderCopyTitle.textContent  = title;
+      folderCopyFile.textContent   = filename;
+      folderCopyCount.textContent  = count;
+      folderCopyBarFill.style.width = `${pct}%`;
+      folderCopyStatus.textContent = status;
+      folderCopyStatus.className   = `folder-copy-status${statusClass ? ` ${statusClass}` : ''}`;
+      folderCopyToast.hidden = false;
+    }
+
+    function hideFolderCopyToast() {
+      folderCopyToast.hidden = true;
+      folderCopyBarFill.style.width = '0%';
+      if (removeFolderCopyListener) { removeFolderCopyListener(); removeFolderCopyListener = null; }
+      folderCopyInProgress = false;
+    }
+
+    document.getElementById('folderCopyClose').addEventListener('click', hideFolderCopyToast);
+
+    document.getElementById('copyFolderBtn').addEventListener('click', async () => {
+      if (folderCopyInProgress) return;
+
+      // Step 1: pick source folder (start at current library folder)
+      const srcFolder = await window.m13.selectFolderFrom(currentLibraryFolder);
+      if (!srcFolder) return;
+
+      // Step 2: pick destination folder
+      const destFolder = await window.m13.selectDestFolder();
+      if (!destFolder) return;
+
+      folderCopyInProgress = true;
+      const srcName = srcFolder.split('/').filter(Boolean).pop() || srcFolder;
+
+      showFolderCopyToast({
+        title: `Copying "${srcName}"…`,
+        filename: 'Scanning…',
+        count: '',
+        pct: 0,
+        status: 'Starting…',
+      });
+
+      removeFolderCopyListener = window.m13.onFolderCopyProgress(({
+        fileIndex, totalFiles, filename, totalTransferred, totalBytes, pct,
+      }) => {
+        showFolderCopyToast({
+          title: `Copying "${srcName}"…`,
+          filename,
+          count: `File ${fileIndex + 1} of ${totalFiles}`,
+          pct,
+          status: `${formatSize(totalTransferred)} / ${formatSize(totalBytes)} — ${pct}%`,
+        });
+      });
+
+      const result = await window.m13.copyFolder(srcFolder, destFolder);
+
+      if (removeFolderCopyListener) { removeFolderCopyListener(); removeFolderCopyListener = null; }
+      folderCopyInProgress = false;
+
+      if (result.success) {
+        showFolderCopyToast({
+          title: 'Folder copy complete',
+          filename: '',
+          count: `${result.totalFiles} file${result.totalFiles !== 1 ? 's' : ''} copied`,
+          pct: 100,
+          status: `${formatSize(result.totalBytes)} transferred to ${result.destFolder}`,
+          statusClass: 'success',
+        });
+      } else {
+        showFolderCopyToast({
+          title: 'Folder copy failed',
+          filename: '',
+          count: '',
+          pct: 0,
+          status: result.error,
+          statusClass: 'error',
+        });
+      }
+    });
+    // ── Auto-updater ──────────────────────────────────────────────────────────
+    const updateBanner      = document.getElementById('updateBanner');
+    const updateBannerText  = document.getElementById('updateBannerText');
+    const updateBannerSub   = document.getElementById('updateBannerSub');
+    const updateProgressFill= document.getElementById('updateProgressFill');
+    const updateInstallBtn  = document.getElementById('updateInstallBtn');
+    const updateDismissBtn  = document.getElementById('updateDismissBtn');
+
+    updateDismissBtn.addEventListener('click', () => {
+      updateBanner.classList.remove('visible');
+    });
+
+    updateInstallBtn.addEventListener('click', async () => {
+      updateBannerText.textContent = 'Restarting to install update…';
+      updateBannerSub.textContent  = '';
+      updateInstallBtn.hidden = true;
+      await window.m13.installUpdate();
+    });
+
+    window.m13.onUpdateAvailable(({ version }) => {
+      updateBannerText.innerHTML = `Update available — <span>v${version}</span>`;
+      updateBannerSub.textContent = 'Downloading in the background…';
+      updateProgressFill.style.width = '0%';
+      updateInstallBtn.hidden = true;
+      updateBanner.classList.add('visible');
+    });
+
+    window.m13.onUpdateDownloadProgress(({ percent }) => {
+      updateProgressFill.style.width = `${percent}%`;
+      updateBannerSub.textContent = `Downloading… ${percent}%`;
+    });
+
+    window.m13.onUpdateDownloaded(({ version }) => {
+      updateBannerText.innerHTML = `<span>v${version}</span> ready to install`;
+      updateBannerSub.textContent = 'Restart M13 to apply the update.';
+      updateProgressFill.style.width = '100%';
+      updateInstallBtn.hidden = false;
+    });
+
+    // ── USB drive detection ───────────────────────────────────────────────────
+    const driveBanner       = document.getElementById('driveBanner');
+    const driveBannerIcon   = document.getElementById('driveBannerIcon');
+    const driveBannerText   = document.getElementById('driveBannerText');
+    const driveBannerSub    = document.getElementById('driveBannerSub');
+    const driveBannerLoad   = document.getElementById('driveBannerLoad');
+    const driveBannerDismiss = document.getElementById('driveBannerDismiss');
+    const driveBannerProgressFill = document.getElementById('driveBannerProgressFill');
+    const driveBannerProgressWrap = document.getElementById('driveBannerProgressWrap');
+    const driveBannerActions = document.getElementById('driveBannerActions');
+
+    let bannerDismissTimer = null;
+    let pendingMusicFolder = null;
+
+    function showDriveBanner({ icon, text, sub, showActions, autoDismissMs }) {
+      driveBannerIcon.textContent = icon;
+      driveBannerText.innerHTML   = text;
+      driveBannerSub.textContent  = sub || '';
+      driveBannerActions.hidden   = !showActions;
+      driveBannerProgressWrap.hidden = !showActions;
+
+      if (bannerDismissTimer) { clearTimeout(bannerDismissTimer); bannerDismissTimer = null; }
+
+      driveBanner.classList.add('visible');
+
+      if (showActions) {
+        // Reset and animate the countdown bar
+        driveBannerProgressFill.style.transition = 'none';
+        driveBannerProgressFill.style.width = '100%';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          driveBannerProgressFill.style.transition = `width ${autoDismissMs}ms linear`;
+          driveBannerProgressFill.style.width = '0%';
+        }));
+      }
+
+      if (autoDismissMs) {
+        bannerDismissTimer = setTimeout(hideDriveBanner, autoDismissMs);
+      }
+    }
+
+    function hideDriveBanner() {
+      driveBanner.classList.remove('visible');
+      if (bannerDismissTimer) { clearTimeout(bannerDismissTimer); bannerDismissTimer = null; }
+      pendingMusicFolder = null;
+    }
+
+    driveBannerDismiss.addEventListener('click', hideDriveBanner);
+
+    driveBannerLoad.addEventListener('click', async () => {
+      if (!pendingMusicFolder) { hideDriveBanner(); return; }
+      const folder = pendingMusicFolder;
+      hideDriveBanner();
+      switchView('library');
+      await loadFolder(folder);
+    });
+
+    window.m13.onVolumeMounted(({ name, musicFolder, hasPioneer }) => {
+      pendingMusicFolder = musicFolder;
+      const details = [];
+      if (musicFolder) details.push('MUSIC folder found');
+      if (hasPioneer)  details.push('Pioneer rekordbox data detected');
+      showDriveBanner({
+        icon: '💾',
+        text: `USB drive detected: <span>${name}</span>`,
+        sub: details.join(' · '),
+        showActions: !!musicFolder,
+        autoDismissMs: 10000,
+      });
+      if (!musicFolder) {
+        // Pioneer-only or other drive — just show the name, no Load button
+        setTimeout(hideDriveBanner, 5000);
+      }
+    });
+
+    window.m13.onVolumeUnmounted(({ name }) => {
+      hideDriveBanner();
+      showDriveBanner({
+        icon: '⏏',
+        text: `Drive disconnected: <span>${name}</span>`,
+        sub: '',
+        showActions: false,
+        autoDismissMs: 4000,
+      });
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+    // Keep copy-player-btn hidden until a track loads (handled by playerBar visibility + CSS)
+  </script>
+</body>
+</html>

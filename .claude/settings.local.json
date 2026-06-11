@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find ~ -iname \"*.aif*\" 2>/dev/null | head -5; find ~ -iname \"*.wav\" 2>/dev/null | head -5)",
+      "Bash(grep -n \"track-row\\\\${currentTrack\" /Users/pints/M13/index.html)",
+      "Bash(pkill -f \"node_modules/.bin/electron\")",
+      "Bash(pkill -f \"Electron.app/Contents/MacOS/Electron .\")",
+      "Bash(NODE_ENV=development nohup ./node_modules/.bin/electron .)",
+      "Read(//private/tmp/**)",
+      "Read(//Volumes/BACKUP/MUSIC/2025/Minimal Tech #2/**)",
+      "Bash(node -e \"console.log\\(require\\('music-metadata/package.json'\\).version\\)\")",
+      "Bash(./node_modules/.bin/electron --version)",
+      "Bash(cd /Users/pints/M13 *)",
+      "Bash(npm info *)",
+      "Bash(node -e \"const m = require\\('music-metadata'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"const id3 = require\\('node-id3'\\); console.log\\(Object.keys\\(id3\\).join\\(', '\\)\\)\")",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

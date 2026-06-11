@@ -18,7 +18,7 @@
     "asar": true,
     "publish": {
       "provider": "github",
-      "owner": "djpints",
+      "owner": "djpm13",
       "repo": "m13",
       "releaseType": "release"
     },

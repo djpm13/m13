@@ -328,7 +328,7 @@ async function readTrackTags(filePath) {
   }
 }
 
-async function scanFolderRecursively(folderPath) {
+async function scanFolderRecursively(folderPath, onProgress) {
   const results = [];
 
   if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
@@ -349,7 +349,7 @@ async function scanFolderRecursively(folderPath) {
 
     if (entry.isDirectory()) {
       if (entry.name === 'PIONEER REC') continue; // recordings belong in Sets view only
-      results.push(...(await scanFolderRecursively(fullPath)));
+      results.push(...(await scanFolderRecursively(fullPath, onProgress)));
       continue;
     }
 
@@ -378,6 +378,7 @@ async function scanFolderRecursively(folderPath) {
       key: tags.key,
       genre: tags.genre,
     });
+    if (onProgress) onProgress(results.length);
   }
 
   return results;
@@ -579,6 +580,17 @@ ipcMain.handle('select-folder', async () => {
   }
 
   return filePaths[0];
+});
+
+ipcMain.handle('save-playlist-file', async (_event, { defaultName, content, filters }) => {
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: defaultName,
+    filters: filters || [{ name: 'All Files', extensions: ['*'] }],
+    properties: ['createDirectory'],
+  });
+  if (canceled || !filePath) return { canceled: true };
+  fs.writeFileSync(filePath, content, 'utf8');
+  return { filePath };
 });
 
 ipcMain.handle('select-dest-folder', async () => {
@@ -1057,16 +1069,40 @@ ipcMain.handle('save-tracklist', (_event, { filePath, tracklist }) => {
 });
 
 ipcMain.handle('scan-folder', async (_event, folderPath) => {
-  if (!folderPath) {
-    return [];
-  }
+  if (!folderPath) return [];
+  if (path.basename(folderPath) === 'PIONEER REC') return [];
 
-  // Refuse to use a PIONEER REC folder as the library root.
-  if (path.basename(folderPath) === 'PIONEER REC') {
-    return [];
-  }
+  let last = 0;
+  const onProgress = (count) => {
+    if (count - last >= 10 && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('scan-progress', count);
+      last = count;
+    }
+  };
+  const results = await scanFolderRecursively(folderPath, onProgress);
+  if (mainWindow && !mainWindow.isDestroyed())
+    mainWindow.webContents.send('scan-progress', results.length);
+  return results;
+});
 
-  return await scanFolderRecursively(folderPath);
+ipcMain.handle('list-directory', (_event, dirPath) => {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const AUDIO_EXTS = new Set(['.aiff','.aif','.mp3','.wav','.flac','.m4a','.ogg','.opus','.alac']);
+    let audioCount = 0;
+    const dirs = [];
+    for (const e of entries) {
+      if (e.name.startsWith('.')) continue;
+      const full = path.join(dirPath, e.name);
+      if (e.isDirectory()) {
+        dirs.push({ name: e.name, path: full });
+      } else if (e.isFile() && AUDIO_EXTS.has(path.extname(e.name).toLowerCase())) {
+        audioCount++;
+      }
+    }
+    dirs.sort((a, b) => a.name.localeCompare(b.name));
+    return { dirs, audioCount };
+  } catch { return { dirs: [], audioCount: 0 }; }
 });
 
 ipcMain.handle('scan-rekordbox', async (_event, { onlyVolumes } = {}) => {

@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>M13</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
     /* ── Variables ─────────────────────────────────────────────────────────── */
     :root {
@@ -381,16 +384,20 @@
     .key-cell { width: 60px; font-variant-numeric: tabular-nums; }
     .folder-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    /* ── Row copy button ───────────────────────────────────────────────────── */
-    .copy-row-btn {
+    /* ── Row action buttons (copy + add to playlist) ──────────────────────── */
+    td.copy-cell { width: 80px; padding: 0 10px; text-align: right; }
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .copy-row-btn, .add-row-btn {
       display: none;
       align-items: center;
+      justify-content: center;
       gap: 4px;
       height: 24px;
-      padding: 0 9px;
-      border: 1px solid var(--border-2);
-      background: var(--surface-3);
-      color: var(--text-2);
       border-radius: 6px;
       font-family: inherit;
       font-size: 11px;
@@ -399,8 +406,228 @@
       white-space: nowrap;
       transition: color var(--t), background var(--t), border-color var(--t);
     }
+    .copy-row-btn {
+      padding: 0 9px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-3);
+      color: var(--text-2);
+    }
     .copy-row-btn:hover { color: var(--accent); border-color: rgba(200,241,53,0.3); }
-    tbody tr:hover .copy-row-btn { display: inline-flex; }
+    .add-row-btn {
+      width: 24px;
+      padding: 0;
+      border: 1px solid rgba(200,241,53,0.22);
+      background: rgba(200,241,53,0.07);
+      color: var(--accent);
+      font-size: 14px;
+      line-height: 1;
+    }
+    .add-row-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.45); }
+    .add-row-btn.in-playlist {
+      background: rgba(200,241,53,0.18);
+      border-color: rgba(200,241,53,0.55);
+      color: var(--accent);
+    }
+    tbody tr:hover .copy-row-btn,
+    tbody tr:hover .add-row-btn { display: inline-flex; }
+
+    /* ── Playlist drawer ───────────────────────────────────────────────────── */
+    .playlist-panel {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 80px;
+      height: 252px;
+      background: rgba(10,10,10,0.98);
+      border-top: 1px solid var(--border-2);
+      backdrop-filter: blur(24px) saturate(1.3);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      pointer-events: none;
+      transition: transform 0.24s cubic-bezier(0.34,1.1,0.64,1);
+    }
+    .playlist-panel.open {
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .playlist-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      height: 44px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .playlist-panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      flex: 1;
+    }
+    .playlist-count-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(200,241,53,0.1);
+      border: 1px solid rgba(200,241,53,0.25);
+      border-radius: 999px;
+      padding: 1px 7px;
+      min-width: 22px;
+      text-align: center;
+    }
+    .playlist-duration-label {
+      font-size: 11px;
+      color: var(--muted-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .playlist-header-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .playlist-export-btn {
+      height: 28px;
+      padding: 0 12px;
+      border: 1px solid rgba(200,241,53,0.28);
+      background: rgba(200,241,53,0.08);
+      color: var(--accent);
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--t), border-color var(--t);
+    }
+    .playlist-export-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.5); }
+    .playlist-export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pl-rb-btn {
+      border-color: rgba(125,211,252,0.28);
+      background: rgba(125,211,252,0.07);
+      color: #7dd3fc;
+    }
+    .pl-rb-btn:hover:not(:disabled) {
+      background: rgba(125,211,252,0.15);
+      border-color: rgba(125,211,252,0.5);
+    }
+    .playlist-status-msg {
+      padding: 5px 16px 0;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+    .playlist-status-msg.success { color: var(--green); }
+    .playlist-status-msg.error   { color: var(--red); }
+    .playlist-clear-btn, .playlist-close-btn {
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: color var(--t), border-color var(--t);
+    }
+    .playlist-clear-btn:hover, .playlist-close-btn:hover { color: var(--text); border-color: var(--border-2); }
+    .playlist-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .playlist-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 12.5px;
+      color: var(--muted-2);
+    }
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background var(--t);
+    }
+    .playlist-item:hover { background: rgba(255,255,255,0.025); }
+    .playlist-item:last-child { border-bottom: none; }
+    .playlist-item-num {
+      width: 18px;
+      font-size: 10.5px;
+      color: var(--muted-2);
+      text-align: right;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .playlist-item-art {
+      width: 32px; height: 32px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-2);
+      overflow: hidden;
+    }
+    .playlist-item-info { flex: 1; min-width: 0; }
+    .playlist-item-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .playlist-item-meta {
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .playlist-item-remove {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      border: 0; background: transparent; color: var(--muted-2);
+      border-radius: 5px; cursor: pointer; flex-shrink: 0;
+      font-size: 12px; line-height: 1;
+      transition: color var(--t), background var(--t);
+    }
+    .playlist-item-remove:hover { color: var(--red); background: rgba(255,107,107,0.08); }
+
+    /* Playlist toggle btn in toolbar */
+    .btn-playlist {
+      position: relative;
+    }
+    .btn-playlist .pl-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      min-width: 14px; height: 14px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #0a0a0a;
+      font-size: 9px;
+      font-weight: 800;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+    }
+    .btn-playlist .pl-badge.visible { display: flex; }
 
     /* ── Player bar ────────────────────────────────────────────────────────── */
     .player-bar {
@@ -747,6 +974,49 @@
       font-size: 12.5px;
     }
     .scanning-indicator[hidden] { display: none; }
+
+    /* ── Library scan overlay ─────────────────────────────────────────────── */
+    .library-scanning {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: 260px;
+      text-align: center;
+      padding: 40px 24px;
+    }
+    .library-scanning[hidden] { display: none; }
+    .library-scanning .scan-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .library-scanning .scan-count {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      min-height: 16px;
+    }
+    .scan-bar-wrap {
+      width: 200px;
+      height: 2px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .scan-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      width: 0%;
+      animation: scan-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes scan-pulse {
+      0%   { width: 0%;   margin-left: 0%; }
+      50%  { width: 60%;  margin-left: 20%; }
+      100% { width: 0%;   margin-left: 100%; }
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
       width: 14px; height: 14px;
@@ -869,6 +1139,142 @@
     }
     .dest-choose-btn:hover { color: var(--accent); border-color: rgba(200,241,53,0.3); }
     .export-progress-wrap { display: flex; flex-direction: column; gap: 5px; }
+
+    /* ── Browse button + sidebar ───────────────────────────────────────────── */
+    .btn-browse {
+      color: #6ee7b7;
+      border-color: rgba(110,231,183,0.28);
+      background: rgba(110,231,183,0.07);
+      font-weight: 700;
+    }
+    .btn-browse:hover {
+      background: rgba(110,231,183,0.14);
+      border-color: rgba(110,231,183,0.5);
+    }
+    .btn-browse.active {
+      background: rgba(110,231,183,0.16);
+      border-color: rgba(110,231,183,0.55);
+    }
+
+    .browse-sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 80px;
+      width: 260px;
+      background: rgba(10,10,10,0.98);
+      border-right: 1px solid var(--border-2);
+      backdrop-filter: blur(20px);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      pointer-events: none;
+      transition: transform 0.24s cubic-bezier(0.34,1.1,0.64,1);
+    }
+    .browse-sidebar.open {
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .browse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .browse-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .browse-close {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      border: 0; background: transparent; color: var(--muted-2);
+      border-radius: 5px; cursor: pointer;
+      transition: color var(--t);
+    }
+    .browse-close:hover { color: var(--text); }
+
+    .browse-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0 16px;
+    }
+
+    .browse-node {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+      position: relative;
+    }
+    .browse-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      padding: 5px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 0 4px;
+      transition: background var(--t), color var(--t);
+      font-size: 12px;
+      color: var(--text-2);
+      min-width: 0;
+      text-align: left;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .browse-row:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .browse-row.active-folder { background: rgba(110,231,183,0.09); color: #6ee7b7; }
+
+    .browse-arrow {
+      width: 14px; height: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: var(--muted-2);
+      transition: transform 0.15s;
+    }
+    .browse-arrow.open { transform: rotate(90deg); }
+    .browse-arrow svg { display: block; }
+
+    .browse-icon { flex-shrink: 0; opacity: 0.55; }
+    .browse-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .browse-audio-count {
+      font-size: 10px;
+      color: var(--muted-2);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .browse-children {
+      padding-left: 18px;
+    }
+    .browse-children[hidden] { display: none; }
+
+    .browse-drive-section {
+      padding: 8px 12px 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted-2);
+    }
+
+    .browse-loading {
+      padding: 6px 30px;
+      font-size: 11px;
+      color: var(--muted-2);
+    }
 
     /* ── M8 button ─────────────────────────────────────────────────────────── */
     .btn-m8 {
@@ -1097,6 +1503,49 @@
     }
     .m8-pip.on { background: var(--accent); box-shadow: 0 0 4px rgba(200,241,53,0.5); }
 
+    /* ── Player bar queue button ───────────────────────────────────────────── */
+    .player-add-queue-btn {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid rgba(200,241,53,0.30);
+      background: transparent;
+      color: var(--accent);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background var(--t), border-color var(--t), box-shadow var(--t);
+    }
+    .player-add-queue-btn:hover {
+      background: rgba(200,241,53,0.12);
+      border-color: rgba(200,241,53,0.55);
+    }
+    .player-add-queue-btn.in-queue {
+      background: rgba(200,241,53,0.22);
+      border-color: rgba(200,241,53,0.65);
+      box-shadow: 0 0 10px rgba(200,241,53,0.18);
+    }
+
+    .m8-add-btn {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(200,241,53,0.22);
+      background: rgba(200,241,53,0.07);
+      color: var(--accent);
+      border-radius: 6px;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background var(--t), border-color var(--t);
+      margin-left: 6px;
+    }
+    .m8-add-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.45); }
+    .m8-add-btn.in-queue {
+      background: rgba(200,241,53,0.20);
+      border-color: rgba(200,241,53,0.55);
+      box-shadow: 0 0 8px rgba(200,241,53,0.15);
+    }
+
     .m8-section-label {
       padding: 10px 14px 4px;
       font-size: 9.5px;
@@ -1164,6 +1613,539 @@
     .mh-table tbody tr:hover { background: rgba(200,241,53,0.035); }
     .mh-table td.muted { color: var(--muted); }
     .mh-table td.bpm { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    /* ── Ambient Mode ──────────────────────────────────────────────────────── */
+    .btn-ambient {
+      color: #a78bfa;
+      border-color: rgba(167,139,250,0.28);
+      background: rgba(167,139,250,0.07);
+      font-weight: 700;
+    }
+    .btn-ambient:hover {
+      background: rgba(167,139,250,0.14);
+      border-color: rgba(167,139,250,0.5);
+      color: #c4b5fd;
+    }
+    .btn-ambient.active {
+      background: rgba(167,139,250,0.18);
+      border-color: rgba(167,139,250,0.55);
+    }
+
+    .ambient-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: #080810;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: none;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .ambient-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ambient-overlay.cursor-visible { cursor: default; }
+
+    /* Stars canvas — behind everything */
+    #ambientStars {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* Top bar */
+    .ambient-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 36px;
+      z-index: 2;
+    }
+    .ambient-m13-logo {
+      font-size: 18px;
+      font-weight: 900;
+      color: rgba(200,241,53,0.18);
+      letter-spacing: -0.05em;
+      user-select: none;
+    }
+    .ambient-clock-wrap {
+      position: relative;
+      display: inline-block;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 8px 18px 10px;
+      user-select: none;
+    }
+    .ambient-clock-ghost,
+    .ambient-clock-live {
+      font-family: 'Share Tech Mono', 'SF Mono', monospace;
+      font-size: 48px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .ambient-clock-ghost {
+      color: rgba(200,241,53,0.10);
+      display: block;
+    }
+    .ambient-clock-live {
+      position: absolute;
+      inset: 8px 18px 10px;
+      display: flex;
+      align-items: center;
+      color: rgba(200,241,53,0.72);
+    }
+
+    /* Center content */
+    .ambient-center {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding-bottom: 220px; /* clear the visualiser */
+    }
+
+    /* No-track idle state */
+    .ambient-idle-logo {
+      font-size: 72px;
+      font-weight: 900;
+      color: rgba(200,241,53,0.12);
+      letter-spacing: -0.06em;
+      user-select: none;
+      animation: ambient-breathe 4s ease-in-out infinite;
+    }
+    @keyframes ambient-breathe {
+      0%, 100% { opacity: 0.12; }
+      50%       { opacity: 0.22; }
+    }
+
+    /* Artwork */
+    .ambient-artwork-wrap {
+      position: relative;
+      width: 220px; height: 220px;
+      border-radius: 18px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ambient-artwork-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,241,53,0.18) 0%, transparent 65%);
+      animation: ambient-glow 3.5s ease-in-out infinite;
+      z-index: -1;
+    }
+    @keyframes ambient-glow {
+      0%, 100% { transform: scale(1);   opacity: 0.8; }
+      50%       { transform: scale(1.08); opacity: 1;   }
+    }
+    .ambient-artwork {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 18px;
+      display: block;
+    }
+    .ambient-artwork-placeholder {
+      width: 100%; height: 100%;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes ambient-spin {
+      to { transform: rotate(360deg); }
+    }
+    .ambient-disc {
+      animation: ambient-spin 8s linear infinite;
+      opacity: 0.25;
+    }
+    .ambient-artwork-wrap img { animation: ambient-pulse 3.5s ease-in-out infinite; }
+    @keyframes ambient-pulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.012); }
+    }
+
+    /* Track info */
+    .ambient-track-name {
+      font-size: 32px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: -0.03em;
+      text-align: center;
+      max-width: 700px;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ambient-track-meta {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.38);
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+    .ambient-track-meta .sep { margin: 0 10px; opacity: 0.4; }
+    .ambient-track-meta .accent { color: rgba(200,241,53,0.6); font-weight: 600; }
+
+    /* Visualiser canvas */
+    .ambient-viz-wrap {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: 3px; /* above progress bar */
+      height: 180px;
+      z-index: 2;
+    }
+    #ambientViz {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── Ambient Controls Bar ───────────────────────────────────────────────── */
+    .ambient-controls {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      z-index: 10;
+      padding: 0 40px 36px;
+      background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
+      display: flex; flex-direction: column; gap: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 380ms ease;
+    }
+    .ambient-controls.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Exit button — top-right corner */
+    .ambient-exit-btn {
+      position: absolute;
+      top: 28px; right: 36px;
+      z-index: 11;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.55);
+      font-size: 12px; font-weight: 500;
+      letter-spacing: 0.03em;
+      border-radius: 20px;
+      padding: 5px 14px;
+      cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity 380ms ease, background var(--t), color var(--t);
+    }
+    .ambient-exit-btn.visible { opacity: 1; pointer-events: auto; }
+    .ambient-exit-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+
+    /* Progress row */
+    .ambient-ctrl-progress {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .ambient-ctrl-time {
+      font-size: 11.5px; font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,0.45); flex-shrink: 0; min-width: 36px;
+    }
+    .ambient-ctrl-time.right { text-align: right; }
+    .ambient-seek-wrap {
+      flex: 1; position: relative; height: 20px;
+      display: flex; align-items: center; cursor: pointer;
+    }
+    .ambient-seek-track {
+      position: absolute; left: 0; right: 0; height: 3px;
+      background: rgba(255,255,255,0.15); border-radius: 2px;
+      overflow: hidden;
+    }
+    .ambient-seek-fill {
+      height: 100%; background: var(--accent);
+      border-radius: 2px; transition: width 0.25s linear;
+      pointer-events: none;
+    }
+    .ambient-seek-thumb {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 11px; height: 11px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      transition: left 0.25s linear;
+      pointer-events: none;
+    }
+    .ambient-seek-wrap:hover .ambient-seek-track { background: rgba(255,255,255,0.22); }
+    .ambient-seek-wrap:hover .ambient-seek-fill { background: var(--accent); filter: brightness(1.15); }
+
+    /* Buttons row */
+    .ambient-ctrl-buttons {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+    }
+    .ambient-ctrl-btn {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.65);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      transition: color var(--t), background var(--t), transform 80ms ease;
+      flex-shrink: 0;
+    }
+    .ambient-ctrl-btn:hover { color: #fff; }
+    .ambient-ctrl-btn:active { transform: scale(0.88); }
+    .ambient-ctrl-btn.sm { width: 32px; height: 32px; }
+    .ambient-ctrl-btn.md { width: 40px; height: 40px; }
+    .ambient-ctrl-btn.lg {
+      width: 52px; height: 52px;
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 0 0 rgba(200,241,53,0.3);
+      transition: color var(--t), background var(--t), transform 80ms ease, box-shadow 200ms ease;
+    }
+    .ambient-ctrl-btn.lg:hover {
+      background: #d9ff4a;
+      box-shadow: 0 0 0 8px rgba(200,241,53,0.18);
+    }
+
+    /* Volume row */
+    .ambient-ctrl-vol {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 9px; margin-top: -4px;
+    }
+    .ambient-vol-icon { color: rgba(255,255,255,0.38); flex-shrink: 0; }
+    .ambient-vol-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 90px; height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px; outline: none; cursor: pointer;
+    }
+    .ambient-vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: #fff; cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .ambient-vol-slider:hover { background: rgba(255,255,255,0.25); }
+
+    /* Progress bar */
+    .ambient-progress-wrap {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      z-index: 3;
+    }
+    .ambient-progress-fill {
+      height: 100%;
+      background: rgba(200,241,53,0.55);
+      transition: width 0.25s linear;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── Library view toggle ───────────────────────────────────────────────── */
+    .lib-view-toggle {
+      display: flex; align-items: center; gap: 2px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      flex-shrink: 0;
+    }
+    .lib-view-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 24px;
+      border: none; border-radius: 5px;
+      background: transparent; color: var(--muted);
+      cursor: pointer; transition: background var(--t), color var(--t);
+    }
+    .lib-view-btn:hover { background: var(--surface-3); color: var(--text-2); }
+    .lib-view-btn.active {
+      background: var(--surface-3);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(200,241,53,0.18);
+    }
+
+    /* ── Library breadcrumb ────────────────────────────────────────────────── */
+    #libBreadcrumb {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    #libBreadcrumb.visible { display: flex; }
+    .breadcrumb-back {
+      display: flex; align-items: center; gap: 5px;
+      background: none; border: none; cursor: pointer;
+      color: var(--accent); font-size: 12px; padding: 0;
+    }
+    .breadcrumb-back:hover { text-decoration: underline; }
+    .breadcrumb-sep { color: var(--muted-2); }
+    .breadcrumb-current { color: var(--text-2); font-weight: 500; }
+
+    /* ── Album grid ────────────────────────────────────────────────────────── */
+    #albumGrid, #artistList {
+      display: none;
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    #albumGrid.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 18px; align-content: start; }
+    .album-card {
+      display: flex; flex-direction: column;
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 0;
+      transition: transform 140ms ease, background var(--t);
+    }
+    .album-card:hover { transform: translateY(-2px); }
+    .album-card:hover .album-art-wrap { box-shadow: 0 10px 28px rgba(0,0,0,0.55); }
+    .album-art-wrap {
+      width: 100%; aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface-3);
+      position: relative;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      transition: box-shadow var(--t);
+    }
+    .album-art-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .album-art-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted-2);
+    }
+    .album-art-placeholder svg { opacity: 0.45; }
+    .album-info { padding: 8px 2px 0; }
+    .album-name {
+      font-size: 12.5px; font-weight: 600;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      line-height: 1.35;
+    }
+    .album-artist {
+      font-size: 11.5px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .album-track-count {
+      font-size: 11px; color: var(--muted-2);
+      margin-top: 1px;
+    }
+
+    /* Album detail (tracks inside an album) */
+    #albumDetail { display: none; flex-direction: column; overflow-y: auto; flex: 1; }
+    #albumDetail.active { display: flex; }
+    .album-detail-header {
+      display: flex; align-items: center; gap: 20px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .album-detail-art {
+      width: 80px; height: 80px; border-radius: 7px; overflow: hidden;
+      background: var(--surface-3); flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    }
+    .album-detail-art img { width: 100%; height: 100%; object-fit: cover; }
+    .album-detail-meta { min-width: 0; }
+    .album-detail-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .album-detail-artist { font-size: 13px; color: var(--muted); }
+
+    /* ── Artist list ───────────────────────────────────────────────────────── */
+    #artistList.active { display: flex; flex-direction: column; gap: 2px; align-content: start; }
+    .artist-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background var(--t);
+    }
+    .artist-row:hover { background: var(--surface-2); }
+    .artist-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--surface-3);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); flex-shrink: 0;
+      font-size: 15px; font-weight: 700; letter-spacing: -0.03em;
+    }
+    .artist-info { min-width: 0; flex: 1; }
+    .artist-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .artist-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .artist-chevron { color: var(--muted-2); flex-shrink: 0; }
+
+    /* Artist detail */
+    #artistDetail { display: none; flex-direction: column; overflow-y: auto; flex: 1; }
+    #artistDetail.active { display: flex; }
+    .artist-detail-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .artist-detail-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--surface-3);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-2); font-size: 22px; font-weight: 700;
+    }
+    .artist-detail-name { font-size: 20px; font-weight: 700; color: var(--text); }
+    .artist-detail-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .artist-album-section { padding: 12px 20px 4px; }
+    .artist-album-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    }
+
+    /* Shared detail track list */
+    .detail-track-list { display: flex; flex-direction: column; }
+    .detail-track-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 7px 20px;
+      border-radius: 0;
+      cursor: pointer;
+      transition: background var(--t);
+    }
+    .detail-track-row:hover { background: var(--surface-2); }
+    .detail-track-row.active { background: rgba(200,241,53,0.07); }
+    .detail-track-num { width: 22px; text-align: right; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+    .detail-track-art {
+      width: 36px; height: 36px; border-radius: 4px;
+      background: var(--surface-3); overflow: hidden; flex-shrink: 0;
+    }
+    .detail-track-art img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-track-info { min-width: 0; flex: 1; }
+    .detail-track-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail-track-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+    .detail-track-bpm { font-size: 12px; color: var(--muted); width: 48px; text-align: right; flex-shrink: 0; }
+    .detail-track-key { font-size: 12px; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+    .detail-track-add {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border-2);
+      color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--t), color var(--t), border-color var(--t);
+      flex-shrink: 0;
+    }
+    .detail-track-add:hover, .detail-track-add.in-playlist {
+      background: var(--accent); border-color: var(--accent); color: #000;
+    }
+
   </style>
 </head>
 <body>
@@ -1203,6 +2185,26 @@
         <button id="setsTabBtn" class="btn-tab" type="button">Sets</button>
         <button id="historyTabBtn" class="btn-tab" type="button">History</button>
       </div>
+      <div class="lib-view-toggle" id="libViewToggle">
+        <button class="lib-view-btn active" data-libview="tracks" title="Track list">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="1" y1="3" x2="13" y2="3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="1" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <button class="lib-view-btn" data-libview="albums" title="Albums">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.2" height="5.2" rx="1.2" stroke="currentColor" stroke-width="1.2"/><rect x="7.8" y="1" width="5.2" height="5.2" rx="1.2" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="7.8" width="5.2" height="5.2" rx="1.2" stroke="currentColor" stroke-width="1.2"/><rect x="7.8" y="7.8" width="5.2" height="5.2" rx="1.2" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+        <button class="lib-view-btn" data-libview="artists" title="Artists">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 12.5c0-2.485 2.462-4.5 5.5-4.5s5.5 2.015 5.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="lib-view-btn" data-libview="folders" title="Browse folders">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 4C1 3.17 1.67 2.5 2.5 2.5H5.5L7 4H11.5C12.33 4 13 4.67 13 5.5v5C13 11.33 12.33 12 11.5 12h-9C1.67 12 1 11.33 1 10.5V4z" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+      </div>
+      <button id="browseBtn" class="btn btn-browse" type="button" title="Browse drives and folders" style="display:none">Browse</button>
+      <button id="ambientBtn" class="btn btn-ambient" type="button" title="Ambient mode (Esc)">Ambient</button>
+      <button id="playlistToggleBtn" class="btn btn-playlist" type="button" title="Playlist queue">
+        Queue
+        <span id="plBadge" class="pl-badge">0</span>
+      </button>
       <button id="refreshBtn" class="btn" type="button">Refresh</button>
       <button id="m8Btn" class="btn btn-m8" type="button" title="Find similar tracks (harmonic + BPM + genre)">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/><circle cx="6.5" cy="6.5" r="2" fill="currentColor"/><line x1="6.5" y1="1" x2="6.5" y2="3.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="6.5" y1="9.8" x2="6.5" y2="12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="1" y1="6.5" x2="3.2" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="9.8" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -1215,6 +2217,16 @@
       <label class="search-box" for="searchInput"><span>🔎</span><input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre, folder…" /></label>
     </section>
 
+    <!-- Library breadcrumb (album / artist drill-down) -->
+    <div id="libBreadcrumb">
+      <button class="breadcrumb-back" id="breadcrumbBack" type="button">
+        <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current" id="breadcrumbCurrent"></span>
+    </div>
+
     <!-- Library filter bar -->
     <section id="libraryFilters" class="filter-bar" hidden>
       <div class="filter-group">
@@ -1223,14 +2235,15 @@
         <button class="filter-pill" data-filter="format" data-value=".aiff">AIFF</button>
         <button class="filter-pill" data-filter="format" data-value=".mp3">MP3</button>
         <button class="filter-pill" data-filter="format" data-value=".wav">WAV</button>
+        <button class="filter-pill" data-filter="format" data-value=".flac">FLAC</button>
       </div>
       <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-group-label">BPM</span>
         <button class="filter-pill active" data-filter="bpm" data-value="">Any</button>
         <button class="filter-pill" data-filter="bpm" data-value="slow">Slow &lt;100</button>
-        <button class="filter-pill" data-filter="bpm" data-value="mid">Mid 100–125</button>
-        <button class="filter-pill" data-filter="bpm" data-value="fast">Fast &gt;125</button>
+        <button class="filter-pill" data-filter="bpm" data-value="mid">Mid 100–128</button>
+        <button class="filter-pill" data-filter="bpm" data-value="fast">Fast &gt;128</button>
       </div>
     </section>
 
@@ -1252,12 +2265,55 @@
       <span class="stat-chip">Total duration: <strong id="setsTotalDuration">—</strong></span>
     </section>
 
+    <!-- Browse sidebar -->
+    <aside id="browseSidebar" class="browse-sidebar">
+      <div class="browse-header">
+        <span class="browse-title">Browse</span>
+        <button id="browseSidebarClose" class="browse-close" type="button" aria-label="Close">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 1l9 9M10 1L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="browse-tree" id="browseTree"></div>
+    </aside>
+
     <main>
       <!-- Library view -->
       <section id="librarySection" class="panel">
+        <div id="libraryScanning" class="library-scanning" hidden>
+          <div class="spinner" style="width:28px;height:28px;border-width:2px;flex-shrink:0"></div>
+          <div class="scan-label" id="scanLabel">Scanning…</div>
+          <div class="scan-count" id="scanCount"></div>
+          <div class="scan-bar-wrap"><div class="scan-bar-fill"></div></div>
+        </div>
         <div id="emptyState" class="empty-state"><div><h2>Welcome to your DJ library</h2><p>Open a folder to scan for audio files and build your collection.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="emptyOpenBtn" class="btn btn-primary" type="button">Open Library</button><button id="emptyRekordboxBtn" class="btn" type="button">📀 Scan from Rekordbox</button></div></div></div>
         <div id="tableWrap" class="table-wrap" hidden>
           <table><thead><tr><th class="art-cell"></th><th>Track</th><th>Artist</th><th>BPM</th><th>Key</th><th>Folder</th><th>Format</th><th>Size</th><th class="copy-cell"></th></tr></thead><tbody id="trackTableBody"></tbody></table>
+        </div>
+        <!-- Album grid view -->
+        <div id="albumGrid"></div>
+        <!-- Album detail (tracks in one album) -->
+        <div id="albumDetail">
+          <div class="album-detail-header">
+            <div class="album-detail-art" id="albumDetailArt"></div>
+            <div class="album-detail-meta">
+              <div class="album-detail-name" id="albumDetailName"></div>
+              <div class="album-detail-artist" id="albumDetailArtist"></div>
+            </div>
+          </div>
+          <div class="detail-track-list" id="albumDetailTracks"></div>
+        </div>
+        <!-- Artist list view -->
+        <div id="artistList"></div>
+        <!-- Artist detail -->
+        <div id="artistDetail">
+          <div class="artist-detail-header">
+            <div class="artist-detail-avatar" id="artistDetailAvatar"></div>
+            <div>
+              <div class="artist-detail-name" id="artistDetailName"></div>
+              <div class="artist-detail-meta" id="artistDetailMeta"></div>
+            </div>
+          </div>
+          <div id="artistDetailContent"></div>
         </div>
       </section>
 
@@ -1340,6 +2396,10 @@
         <span id="playerSubtitle">Choose a track to start</span>
         <span id="metadataInfo" class="metadata-info"></span>
       </div>
+      <!-- add to queue -->
+      <button id="playerAddToQueueBtn" class="player-add-queue-btn" type="button" title="Add to queue">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
       <!-- progress + volume -->
       <div class="player-controls">
         <div class="player-progress">
@@ -1503,6 +2563,122 @@
       </div>
     </div>
 
+    <!-- Ambient Mode overlay -->
+    <div id="ambientOverlay" class="ambient-overlay">
+      <canvas id="ambientStars"></canvas>
+
+      <div class="ambient-top">
+        <div class="ambient-m13-logo">M13</div>
+        <div class="ambient-clock-wrap">
+          <span class="ambient-clock-ghost">88:88:88</span>
+          <span class="ambient-clock-live" id="ambientClock">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="ambient-center" id="ambientCenter">
+        <!-- idle: no track playing -->
+        <div id="ambientIdle">
+          <div class="ambient-idle-logo">M13</div>
+        </div>
+        <!-- playing: track info -->
+        <div id="ambientTrackInfo" hidden>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:28px">
+            <div class="ambient-artwork-wrap" id="ambientArtworkWrap">
+              <div class="ambient-artwork-placeholder">
+                <svg class="ambient-disc" id="ambientDisc" width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" stroke="rgba(200,241,53,0.3)" stroke-width="1.5"/>
+                  <circle cx="40" cy="40" r="22" stroke="rgba(200,241,53,0.15)" stroke-width="1"/>
+                  <circle cx="40" cy="40" r="6"  fill="rgba(200,241,53,0.2)"/>
+                </svg>
+              </div>
+            </div>
+            <div id="ambientTrackName" class="ambient-track-name"></div>
+            <div id="ambientTrackMeta" class="ambient-track-meta"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ambient-viz-wrap">
+        <canvas id="ambientViz"></canvas>
+      </div>
+      <div class="ambient-progress-wrap">
+        <div id="ambientProgressFill" class="ambient-progress-fill" style="width:0%"></div>
+      </div>
+
+      <!-- Hover controls -->
+      <button id="ambientExitBtn" class="ambient-exit-btn" type="button">Exit Ambient</button>
+
+      <div id="ambientControls" class="ambient-controls">
+        <!-- Seek / progress -->
+        <div class="ambient-ctrl-progress">
+          <span class="ambient-ctrl-time" id="ambientCtrlCurrent">0:00</span>
+          <div class="ambient-seek-wrap" id="ambientSeekWrap">
+            <div class="ambient-seek-track">
+              <div class="ambient-seek-fill" id="ambientSeekFill" style="width:0%"></div>
+            </div>
+            <div class="ambient-seek-thumb" id="ambientSeekThumb" style="left:0%"></div>
+          </div>
+          <span class="ambient-ctrl-time right" id="ambientCtrlDuration">0:00</span>
+        </div>
+
+        <!-- Transport buttons + volume -->
+        <div style="display:flex;align-items:center;gap:0">
+          <!-- Volume (left side) -->
+          <div class="ambient-ctrl-vol" style="flex:1;justify-content:flex-start">
+            <svg class="ambient-vol-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 6H1v4h2l4 3V3L3 6z" fill="currentColor"/>
+              <path d="M11 5c1.1.9 1.8 2.3 1.8 3.7 0 1.4-.7 2.7-1.8 3.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M13.5 3C15.2 4.5 16 6.2 16 8c0 1.8-.8 3.5-2.5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <input id="ambientVolSlider" class="ambient-vol-slider" type="range" min="0" max="1" step="0.01" value="1" />
+          </div>
+
+          <!-- Centre transport -->
+          <div class="ambient-ctrl-buttons">
+            <button id="ambientPrevBtn" class="ambient-ctrl-btn md" type="button" title="Previous track">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3" width="2.5" height="12" rx="1.2" fill="currentColor"/><path d="M16 3.8L6.5 9 16 14.2V3.8z" fill="currentColor"/></svg>
+            </button>
+            <button id="ambientRewBtn" class="ambient-ctrl-btn sm" type="button" title="Back 9 seconds">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a6 6 0 1 0 4.24 10.24" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 2L5 5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><text x="8" y="10.5" text-anchor="middle" fill="currentColor" font-size="4.5" font-family="system-ui" font-weight="600">9</text></svg>
+            </button>
+            <button id="ambientPlayPauseBtn" class="ambient-ctrl-btn lg" type="button" title="Play / Pause">
+              <svg id="ambientPlayIcon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4l10 6-10 6V4z" fill="currentColor"/></svg>
+              <svg id="ambientPauseIcon" width="20" height="20" viewBox="0 0 20 20" fill="none" hidden><rect x="5" y="3" width="3.5" height="14" rx="1.5" fill="currentColor"/><rect x="11.5" y="3" width="3.5" height="14" rx="1.5" fill="currentColor"/></svg>
+            </button>
+            <button id="ambientFwdBtn" class="ambient-ctrl-btn sm" type="button" title="Forward 9 seconds">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a6 6 0 1 1-4.24 10.24" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 2l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><text x="8" y="10.5" text-anchor="middle" fill="currentColor" font-size="4.5" font-family="system-ui" font-weight="600">9</text></svg>
+            </button>
+            <button id="ambientNextBtn" class="ambient-ctrl-btn md" type="button" title="Next track">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="13.5" y="3" width="2.5" height="12" rx="1.2" fill="currentColor"/><path d="M2 3.8L11.5 9 2 14.2V3.8z" fill="currentColor"/></svg>
+            </button>
+          </div>
+
+          <!-- Right spacer (mirrors vol) -->
+          <div style="flex:1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playlist drawer -->
+    <div id="playlistPanel" class="playlist-panel">
+      <div class="playlist-panel-header">
+        <span class="playlist-panel-title">Queue</span>
+        <span id="plCountBadge" class="playlist-count-badge">0</span>
+        <span id="plDurationLabel" class="playlist-duration-label"></span>
+        <div class="playlist-header-actions">
+          <button id="plExportBtn" class="playlist-export-btn" type="button" disabled>Export to Folder</button>
+          <button id="plExportM3uBtn" class="playlist-export-btn pl-rb-btn" type="button" disabled title="Import into Rekordbox via File → Import Playlist">M3U</button>
+          <button id="plExportXmlBtn" class="playlist-export-btn pl-rb-btn" type="button" disabled title="Import into Rekordbox via File → Import rekordbox XML">RB XML</button>
+          <button id="plClearBtn" class="playlist-clear-btn" type="button">Clear</button>
+          <button id="plCloseBtn" class="playlist-close-btn" type="button">✕</button>
+        </div>
+      </div>
+      <div id="plStatusMsg" class="playlist-status-msg" hidden></div>
+      <div id="plBody" class="playlist-body">
+        <div class="playlist-empty">Add tracks with the <strong style="color:var(--accent)">+</strong> button</div>
+      </div>
+    </div>
+
     <!-- M8 Similar Tracks panel -->
     <aside id="m8Panel" class="m8-panel">
       <div class="m8-panel-header">
@@ -1600,7 +2776,7 @@
     function formatTime(seconds) { const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0; const mins = Math.floor(safe / 60); const secs = safe % 60; return `${mins}:${String(secs).padStart(2, '0')}`; }
     function updateActiveRow() { document.querySelectorAll('.track-row').forEach((row) => row.classList.toggle('active', row.dataset.trackPath === (currentTrack && currentTrack.path))); }
     // ── Filter state ──────────────────────────────────────────────────────────
-    let activeFormat = '';   // '' | '.aiff' | '.mp3' | '.wav'
+    let activeFormat = '';   // '' | '.aiff' | '.mp3' | '.wav' | '.flac'
     let activeBpm    = '';   // '' | 'slow' | 'mid' | 'fast'
 
     const libraryFilters = document.getElementById('libraryFilters');
@@ -1615,7 +2791,8 @@
       pill.closest('.filter-group').querySelectorAll('.filter-pill').forEach(p => {
         p.classList.toggle('active', p.dataset.value === value);
       });
-      renderTracks(tracks);
+      if (libView === 'tracks' || libView === 'folders') renderTracks(tracks);
+      else showLibView(libView, { album: libDrillAlbum || undefined, artist: libDrillArtist || undefined });
     });
 
     function matchesBpmRange(track, range) {
@@ -1623,15 +2800,22 @@
       const bpm = parseFloat(track.bpm);
       if (!bpm) return false;
       if (range === 'slow') return bpm < 100;
-      if (range === 'mid')  return bpm >= 100 && bpm <= 125;
-      if (range === 'fast') return bpm > 125;
+      if (range === 'mid')  return bpm >= 100 && bpm <= 128;
+      if (range === 'fast') return bpm > 128;
       return true;
+    }
+
+    function matchesFormat(track, fmt) {
+      if (!fmt) return true;
+      const ext = track.ext.toLowerCase();
+      if (fmt === '.aiff') return ext === '.aiff' || ext === '.aif';
+      return ext === fmt;
     }
 
     function renderTracks(list) {
       const term = searchInput.value.trim().toLowerCase();
       const filtered = list.filter((track) => {
-        if (activeFormat && track.ext.toLowerCase() !== activeFormat) return false;
+        if (!matchesFormat(track, activeFormat)) return false;
         if (!matchesBpmRange(track, activeBpm)) return false;
         if (!term) return true;
         // Include filename so artist-in-filename (e.g. "Monkey Safari - Go.aiff") is searchable
@@ -1673,7 +2857,7 @@
             : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div></td>`;
           const folderName = track.folder ? track.folder.split('/').filter(Boolean).pop() : '—';
           const fmt = track.ext.replace('.', '').toUpperCase();
-          return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></td></tr>`;
+          return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions"><button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to queue">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
         }).join('');
       }
 
@@ -1684,20 +2868,353 @@
       observeArtCells();
     }
 
+    // ── Library view state ────────────────────────────────────────────────────
+    let libView = 'tracks'; // 'tracks' | 'albums' | 'artists' | 'folders'
+    let libDrillAlbum  = null; // { name, artist }
+    let libDrillArtist = null; // artist string
+
+    const albumGrid     = document.getElementById('albumGrid');
+    const albumDetail   = document.getElementById('albumDetail');
+    const artistList    = document.getElementById('artistList');
+    const artistDetail  = document.getElementById('artistDetail');
+    const libBreadcrumb = document.getElementById('libBreadcrumb');
+    const breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
+
+    function getFilteredTracks() {
+      const term = searchInput.value.trim().toLowerCase();
+      return tracks.filter((track) => {
+        if (!matchesFormat(track, activeFormat)) return false;
+        if (!matchesBpmRange(track, activeBpm)) return false;
+        if (!term) return true;
+        const haystack = [track.name, track.filename, track.artist, String(track.bpm ?? ''), track.key, track.genre, track.folder].join(' ').toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    function showLibView(view, opts = {}) {
+      libView = view;
+      libDrillAlbum  = opts.album  || null;
+      libDrillArtist = opts.artist || null;
+
+      // Sync toggle buttons
+      document.querySelectorAll('.lib-view-btn').forEach(b => b.classList.toggle('active', b.dataset.libview === (view === 'albums' && libDrillAlbum ? 'albums' : view === 'artists' && libDrillArtist ? 'artists' : view)));
+
+      // Breadcrumb
+      if (libDrillAlbum) {
+        libBreadcrumb.classList.add('visible');
+        breadcrumbCurrent.textContent = libDrillAlbum.name;
+      } else if (libDrillArtist) {
+        libBreadcrumb.classList.add('visible');
+        breadcrumbCurrent.textContent = libDrillArtist;
+      } else {
+        libBreadcrumb.classList.remove('visible');
+      }
+
+      // Hide all library panes
+      tableWrap.classList.remove('active'); tableWrap.hidden = true;
+      albumGrid.classList.remove('active');
+      albumDetail.classList.remove('active');
+      artistList.classList.remove('active');
+      artistDetail.classList.remove('active');
+
+      // Show browse sidebar for folders view
+      if (view === 'folders') {
+        openBrowse();
+        // Fall back to tracks view visually
+        showLibView('tracks');
+        return;
+      }
+
+      const filtered = getFilteredTracks();
+      const hasLibrary = tracks.length > 0;
+      emptyState.hidden = hasLibrary;
+      libraryFilters.hidden = !hasLibrary || view !== 'tracks';
+
+      if (!hasLibrary) return;
+
+      if (view === 'tracks') {
+        tableWrap.hidden = false;
+        renderTracks(tracks); // uses its own filter logic
+      } else if (view === 'albums') {
+        if (libDrillAlbum) {
+          albumDetail.classList.add('active');
+          renderAlbumDetail(libDrillAlbum, filtered);
+        } else {
+          albumGrid.classList.add('active');
+          renderAlbumGrid(filtered);
+        }
+      } else if (view === 'artists') {
+        if (libDrillArtist) {
+          artistDetail.classList.add('active');
+          renderArtistDetail(libDrillArtist, filtered);
+        } else {
+          artistList.classList.add('active');
+          renderArtistList(filtered);
+        }
+      }
+    }
+
+    // Group helpers
+    function groupBy(arr, keyFn) {
+      const map = new Map();
+      for (const item of arr) {
+        const k = keyFn(item) || '—';
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(item);
+      }
+      return map;
+    }
+
+    // ── Album Grid ────────────────────────────────────────────────────────────
+    function renderAlbumGrid(filtered) {
+      const byAlbum = groupBy(filtered, t => t.album || t.name.replace(/\s*[-–]\s*\d+.*$/, '').trim());
+      const sorted  = [...byAlbum.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+      albumGrid.innerHTML = sorted.map(([albumName, albumTracks]) => {
+        const rep = albumTracks[0];
+        const artist = rep.artist || '—';
+        const cachedArt = artworkCache.get(rep.path);
+        const artHtml = cachedArt
+          ? `<img src="${cachedArt}" alt="" />`
+          : `<div class="album-art-placeholder" data-album-art-path="${rep.path}"><svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="18" r="4.5" fill="currentColor"/></svg></div>`;
+        return `<div class="album-card" data-album="${albumName.replace(/"/g,'&quot;')}" data-album-artist="${artist.replace(/"/g,'&quot;')}">
+          <div class="album-art-wrap">${artHtml}</div>
+          <div class="album-info">
+            <div class="album-name" title="${albumName}">${albumName}</div>
+            <div class="album-artist">${artist}</div>
+            <div class="album-track-count">${albumTracks.length} track${albumTracks.length === 1 ? '' : 's'}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      // Lazy-load artwork for album cards
+      const artObs = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const el = entry.target;
+          const p = el.dataset.albumArtPath;
+          if (!p || el.dataset.loaded) continue;
+          el.dataset.loaded = '1';
+          artObs.unobserve(el);
+          fetchArtwork(p).then(url => {
+            if (url) el.outerHTML = `<img src="${url}" alt="" />`;
+          });
+        }
+      }, { rootMargin: '120px' });
+      albumGrid.querySelectorAll('[data-album-art-path]').forEach(el => artObs.observe(el));
+
+      // Click to drill down
+      albumGrid.querySelectorAll('.album-card').forEach(card => {
+        card.addEventListener('click', () => {
+          showLibView('albums', { album: { name: card.dataset.album, artist: card.dataset.albumArtist } });
+        });
+      });
+    }
+
+    function renderAlbumDetail({ name: albumName, artist: albumArtist }, filtered) {
+      const albumTracks = filtered.filter(t => {
+        const tAlbum = t.album || t.name.replace(/\s*[-–]\s*\d+.*$/, '').trim();
+        return tAlbum === albumName;
+      });
+
+      // Header
+      const rep = albumTracks[0];
+      document.getElementById('albumDetailName').textContent   = albumName;
+      document.getElementById('albumDetailArtist').textContent = albumArtist;
+      const artEl = document.getElementById('albumDetailArt');
+      if (rep) {
+        fetchArtwork(rep.path).then(url => {
+          artEl.innerHTML = url ? `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover"/>` : '';
+        });
+      }
+
+      // Track list
+      document.getElementById('albumDetailTracks').innerHTML = albumTracks.map((t, i) => {
+        const inPl = playlist.some(p => p.path === t.path);
+        const isActive = currentTrack && currentTrack.path === t.path;
+        return `<div class="detail-track-row${isActive ? ' active' : ''}" data-track-path="${t.path}">
+          <span class="detail-track-num">${i + 1}</span>
+          <div class="detail-track-art" data-dta-path="${t.path}"><div class="album-art-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted-2)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></div></div>
+          <div class="detail-track-info">
+            <div class="detail-track-name">${t.name}</div>
+            <div class="detail-track-sub">${t.artist || ''}</div>
+          </div>
+          <span class="detail-track-bpm">${t.bpm || '—'}</span>
+          <span class="detail-track-key">${t.key || '—'}</span>
+          <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to queue">+</button>
+        </div>`;
+      }).join('');
+
+      // Lazy-load artwork in detail rows
+      albumDetail.querySelectorAll('[data-dta-path]').forEach(el => {
+        fetchArtwork(el.dataset.dtaPath).then(url => {
+          if (url) el.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px"/>`;
+        });
+      });
+
+      // Play on row click
+      albumDetail.querySelectorAll('.detail-track-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.detail-track-add')) return;
+          const t = tracks.find(x => x.path === row.dataset.trackPath);
+          if (t) playTrack(t);
+        });
+      });
+
+      // Queue buttons
+      albumDetail.querySelectorAll('.detail-track-add').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const t = tracks.find(x => x.path === btn.dataset.plPath);
+          if (!t) return;
+          const idx = playlist.findIndex(p => p.path === t.path);
+          if (idx >= 0) { playlist.splice(idx, 1); btn.classList.remove('in-playlist'); }
+          else { playlist.push(t); btn.classList.add('in-playlist'); }
+          updatePlBadge();
+          renderPlaylist();
+        });
+      });
+    }
+
+    // ── Artist List ───────────────────────────────────────────────────────────
+    function renderArtistList(filtered) {
+      const byArtist = groupBy(filtered, t => t.artist);
+      const sorted   = [...byArtist.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+      artistList.innerHTML = sorted.map(([artist, artistTracks]) => {
+        const initials = artist === '—' ? '?' : artist.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+        const albumCount = new Set(artistTracks.map(t => t.album || '?')).size;
+        return `<div class="artist-row" data-artist="${artist.replace(/"/g,'&quot;')}">
+          <div class="artist-avatar">${initials}</div>
+          <div class="artist-info">
+            <div class="artist-name">${artist}</div>
+            <div class="artist-meta">${artistTracks.length} track${artistTracks.length === 1 ? '' : 's'} · ${albumCount} album${albumCount === 1 ? '' : 's'}</div>
+          </div>
+          <svg class="artist-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>`;
+      }).join('');
+
+      artistList.querySelectorAll('.artist-row').forEach(row => {
+        row.addEventListener('click', () => showLibView('artists', { artist: row.dataset.artist }));
+      });
+    }
+
+    function renderArtistDetail(artist, filtered) {
+      const artistTracks = filtered.filter(t => (t.artist || '—') === artist);
+      const initials = artist === '—' ? '?' : artist.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+      document.getElementById('artistDetailAvatar').textContent = initials;
+      document.getElementById('artistDetailName').textContent   = artist;
+      document.getElementById('artistDetailMeta').textContent   = `${artistTracks.length} track${artistTracks.length === 1 ? '' : 's'}`;
+
+      const byAlbum = groupBy(artistTracks, t => t.album || '—');
+      const content = document.getElementById('artistDetailContent');
+      content.innerHTML = '';
+
+      for (const [albumName, albumTracks] of [...byAlbum.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+        const section = document.createElement('div');
+        section.className = 'artist-album-section';
+        section.innerHTML = `<div class="artist-album-label">${albumName}</div>`;
+
+        const trackList = document.createElement('div');
+        trackList.className = 'detail-track-list';
+        trackList.innerHTML = albumTracks.map((t, i) => {
+          const inPl = playlist.some(p => p.path === t.path);
+          const isActive = currentTrack && currentTrack.path === t.path;
+          return `<div class="detail-track-row${isActive ? ' active' : ''}" data-track-path="${t.path}">
+            <span class="detail-track-num">${i + 1}</span>
+            <div class="detail-track-art" data-dta-path="${t.path}"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted-2)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></div></div>
+            <div class="detail-track-info">
+              <div class="detail-track-name">${t.name}</div>
+              <div class="detail-track-sub">${albumName !== '—' ? albumName : ''}</div>
+            </div>
+            <span class="detail-track-bpm">${t.bpm || '—'}</span>
+            <span class="detail-track-key">${t.key || '—'}</span>
+            <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to queue">+</button>
+          </div>`;
+        }).join('');
+        section.appendChild(trackList);
+        content.appendChild(section);
+      }
+
+      // Lazy artwork
+      artistDetail.querySelectorAll('[data-dta-path]').forEach(el => {
+        fetchArtwork(el.dataset.dtaPath).then(url => {
+          if (url) el.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px"/>`;
+        });
+      });
+
+      // Play on click
+      artistDetail.querySelectorAll('.detail-track-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.detail-track-add')) return;
+          const t = tracks.find(x => x.path === row.dataset.trackPath);
+          if (t) playTrack(t);
+        });
+      });
+
+      // Queue buttons
+      artistDetail.querySelectorAll('.detail-track-add').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const t = tracks.find(x => x.path === btn.dataset.plPath);
+          if (!t) return;
+          const idx = playlist.findIndex(p => p.path === t.path);
+          if (idx >= 0) { playlist.splice(idx, 1); btn.classList.remove('in-playlist'); }
+          else { playlist.push(t); btn.classList.add('in-playlist'); }
+          updatePlBadge();
+          renderPlaylist();
+        });
+      });
+    }
+
+    // ── View toggle buttons ───────────────────────────────────────────────────
+    document.querySelectorAll('.lib-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (currentView !== 'library') return;
+        showLibView(btn.dataset.libview);
+      });
+    });
+
+    // ── Breadcrumb back ───────────────────────────────────────────────────────
+    document.getElementById('breadcrumbBack').addEventListener('click', () => {
+      if (libDrillAlbum)  showLibView('albums');
+      else if (libDrillArtist) showLibView('artists');
+    });
+
     let currentLibraryFolder = null;
+    const libraryScanning = document.getElementById('libraryScanning');
+    const scanLabel       = document.getElementById('scanLabel');
+    const scanCountEl     = document.getElementById('scanCount');
+
+    function showLibraryScan(label) {
+      emptyState.hidden        = true;
+      tableWrap.hidden         = true;
+      albumGrid.classList.remove('active');
+      albumDetail.classList.remove('active');
+      artistList.classList.remove('active');
+      artistDetail.classList.remove('active');
+      libBreadcrumb.classList.remove('visible');
+      libraryScanning.hidden   = false;
+      scanLabel.textContent    = label;
+      scanCountEl.textContent  = '';
+    }
+    function hideLibraryScan() {
+      libraryScanning.hidden = true;
+    }
+
     async function loadFolder(folderPath) {
+      showLibraryScan('Scanning library…');
+      const removeProg = window.m13.onScanProgress((count) => {
+        scanCountEl.textContent = `${count} tracks found so far…`;
+      });
       const scanned = await window.m13.scanFolder(folderPath);
+      removeProg();
+      hideLibraryScan();
       tracks = Array.isArray(scanned) ? scanned : [];
-      // Expose on window so DevTools console can inspect at any time: window._m13.tracks
       window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
-      console.log(`[M13] Loaded ${tracks.length} tracks from "${folderPath}"`);
-      console.log('[M13] First track fields:', tracks[0]
-        ? JSON.stringify({ name: tracks[0].name, filename: tracks[0].filename,
-            artist: tracks[0].artist, bpm: tracks[0].bpm,
-            key: tracks[0].key, genre: tracks[0].genre, ext: tracks[0].ext })
-        : 'none');
       currentLibraryFolder = folderPath;
-      renderTracks(tracks);
+      showLibView(libView); // re-render whatever view is active
       await window.m13.saveLastFolder(folderPath);
     }
 
@@ -1739,6 +3256,7 @@
       if (!track) return;
       currentTrack = track;
       playerBar.hidden = false;
+      syncPlayerQueueBtn();
       playerTitle.textContent = track.name;
       playerSubtitle.textContent = 'Loading metadata…';
       metadataInfo.textContent = 'Artist • BPM • Genre • Key';
@@ -1852,6 +3370,14 @@
       document.getElementById('copyFolderBtn').hidden = !isLibrary;
       if (!isLibrary) { const m = document.getElementById('exportCatalogueMsg'); m.hidden = true; m.textContent = ''; }
 
+      if (isLibrary && tracks.length > 0) showLibView(libView);
+      if (isLibrary) {
+        document.getElementById('libViewToggle').style.display = '';
+        libBreadcrumb.classList.toggle('visible', !!(libDrillAlbum || libDrillArtist));
+        libraryFilters.hidden = libView !== 'tracks' || !tracks.length;
+      } else {
+        libBreadcrumb.classList.remove('visible');
+      }
       if (isSets && !setsLoaded) refreshSets();
       if (isHistory && !historyLoaded) refreshHistory();
     }
@@ -1999,7 +3525,7 @@
     historyTabBtn.addEventListener('click', () => switchView('history'));
 
     document.getElementById('refreshBtn').addEventListener('click', () => {
-      if (currentView === 'library') renderTracks(tracks);
+      if (currentView === 'library') showLibView(libView);
       else if (currentView === 'sets') refreshSets();
       else if (currentView === 'history') { historyLoaded = false; refreshHistory(); }
     });
@@ -2517,20 +4043,22 @@
       const btn = document.getElementById('rekordboxBtn');
       const emptyBtn = document.getElementById('emptyRekordboxBtn');
       const origText = btn.textContent;
-      btn.textContent = '⏳ Scanning…';
+      btn.textContent = 'Scanning…';
       btn.disabled = true;
-      if (emptyBtn) { emptyBtn.textContent = '⏳ Scanning…'; emptyBtn.disabled = true; }
+      if (emptyBtn) { emptyBtn.disabled = true; }
+      showLibraryScan('Reading Rekordbox library…');
       try {
         const result = await window.m13.scanRekordbox();
         if (result.error) {
+          hideLibraryScan();
           alert('Rekordbox scan failed: ' + result.error);
           return;
         }
+        hideLibraryScan();
         tracks = result.tracks;
         window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
         currentLibraryFolder = 'rekordbox';
-        renderTracks(tracks);
-        console.log(`[M13] Loaded ${tracks.length} tracks from Rekordbox`);
+        showLibView(libView);
       } finally {
         btn.textContent = origText;
         btn.disabled = false;
@@ -2540,7 +4068,10 @@
     document.getElementById('rekordboxBtn').addEventListener('click', scanRekordbox);
     document.getElementById('emptyRekordboxBtn').addEventListener('click', scanRekordbox);
 
-    searchInput.addEventListener('input', () => renderTracks(tracks));
+    searchInput.addEventListener('input', () => {
+      if (libView === 'tracks' || libView === 'folders') renderTracks(tracks);
+      else showLibView(libView, { album: libDrillAlbum ? libDrillAlbum : undefined, artist: libDrillArtist ? libDrillArtist : undefined });
+    });
 
     // ── Export Catalogue ──────────────────────────────────────────────────────
     document.getElementById('exportCatalogueBtn').addEventListener('click', async () => {
@@ -2934,6 +4465,7 @@
             : `<div class="m8-art"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2" opacity="0.4"/><circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.4"/></svg></div>`;
           const pips = [1,2,3].map(i => `<span class="m8-pip${i<=s?' on':''}"></span>`).join('');
           const tags = reasons.map(r => `<span class="m8-tag m8-tag-${r.type}">${r.label}</span>`).join('');
+          const inQueue = playlist.some(p => p.path === t.path);
           html += `<div class="m8-result-item" data-track-path="${t.path}">
             ${artHtml}
             <div class="m8-info">
@@ -2942,6 +4474,7 @@
               <div class="m8-tags">${tags}</div>
             </div>
             <div class="m8-score"><div class="m8-score-pips">${pips}</div></div>
+            <button class="m8-add-btn${inQueue ? ' in-queue' : ''}" data-pl-path="${t.path}" title="${inQueue ? 'In queue' : 'Add to queue'}" type="button">+</button>
           </div>`;
         }
       }
@@ -2959,7 +4492,20 @@
         }
       });
 
-      // Clicking a result plays that track
+      // + button: add to queue (stop propagation so the row click doesn't also play the track)
+      m8Results.querySelectorAll('.m8-add-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = btn.dataset.plPath;
+          const t = tracks.find(x => x.path === p);
+          if (!t) return;
+          addToPlaylist(t);
+          btn.classList.add('in-queue');
+          btn.title = 'In queue';
+        });
+      });
+
+      // Clicking a result row plays that track
       m8Results.querySelectorAll('.m8-result-item').forEach(item => {
         item.addEventListener('click', () => {
           const p = item.getAttribute('data-track-path');
@@ -2986,6 +4532,893 @@
     // Re-render M8 panel when the playing track changes (if panel is open)
     audioPlayer.addEventListener('play', () => {
       if (m8Open && currentTrack) renderM8Panel(currentTrack);
+    });
+
+    // ── Browse Sidebar ────────────────────────────────────────────────────────
+    const browseSidebar = document.getElementById('browseSidebar');
+    const browseTree    = document.getElementById('browseTree');
+    const browseBtn     = document.getElementById('browseBtn');
+    let browseOpen      = false;
+    let activeBrowsePath = null;
+
+    function openBrowse() {
+      browseOpen = true;
+      browseSidebar.classList.add('open');
+      browseBtn.classList.add('active');
+      if (!browseTree.hasChildNodes()) populateBrowseRoots();
+    }
+    function closeBrowse() {
+      browseOpen = false;
+      browseSidebar.classList.remove('open');
+      browseBtn.classList.remove('active');
+    }
+    browseBtn.addEventListener('click', () => browseOpen ? closeBrowse() : openBrowse());
+    document.getElementById('browseSidebarClose').addEventListener('click', closeBrowse);
+
+    // SVG helpers
+    const svgArrow  = `<svg width="7" height="10" viewBox="0 0 7 10" fill="none"><path d="M1.5 1.5L5.5 5L1.5 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const svgDrive  = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3.5" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="9.5" cy="7" r="1" fill="currentColor"/><path d="M1 6h11" stroke="currentColor" stroke-width="1.1"/></svg>`;
+    const svgFolder = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 4.5C1 3.67 1.67 3 2.5 3H5l1.5 1.5H10.5C11.33 4.5 12 5.17 12 6v3.5C12 10.33 11.33 11 10.5 11h-8C1.67 11 1 10.33 1 9.5v-5z" stroke="currentColor" stroke-width="1.2"/></svg>`;
+
+    function makeRow({ icon, name, audioCount, indent = 0, onClick, onArrowClick, hasChildren }) {
+      const node = document.createElement('div');
+      node.className = 'browse-node';
+
+      const row = document.createElement('button');
+      row.className = 'browse-row';
+      row.style.paddingLeft = `${12 + indent * 14}px`;
+
+      // Arrow toggle (only if has children)
+      const arrowEl = document.createElement('span');
+      arrowEl.className = 'browse-arrow';
+      arrowEl.innerHTML = hasChildren ? svgArrow : '';
+      if (onArrowClick) {
+        arrowEl.addEventListener('click', (e) => { e.stopPropagation(); onArrowClick(arrowEl, childrenEl); });
+      }
+
+      const iconEl = document.createElement('span');
+      iconEl.className = 'browse-icon';
+      iconEl.innerHTML = icon;
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'browse-name';
+      nameEl.textContent = name;
+
+      row.appendChild(arrowEl);
+      row.appendChild(iconEl);
+      row.appendChild(nameEl);
+
+      if (audioCount > 0) {
+        const cnt = document.createElement('span');
+        cnt.className = 'browse-audio-count';
+        cnt.textContent = audioCount;
+        row.appendChild(cnt);
+      }
+
+      row.addEventListener('click', () => { if (onClick) onClick(row); });
+      node.appendChild(row);
+
+      const childrenEl = document.createElement('div');
+      childrenEl.className = 'browse-children';
+      childrenEl.hidden = true;
+      node.appendChild(childrenEl);
+
+      return { node, row, arrowEl, childrenEl };
+    }
+
+    async function expandFolder(path, childrenEl, arrowEl, indent) {
+      if (childrenEl.hasChildNodes()) {
+        // Already loaded — just toggle
+        childrenEl.hidden = !childrenEl.hidden;
+        arrowEl.classList.toggle('open', !childrenEl.hidden);
+        return;
+      }
+      // Load
+      childrenEl.innerHTML = `<div class="browse-loading">Loading…</div>`;
+      childrenEl.hidden = false;
+      arrowEl.classList.add('open');
+
+      const { dirs, audioCount } = await window.m13.listDirectory(path);
+
+      childrenEl.innerHTML = '';
+
+      if (dirs.length === 0 && audioCount === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'browse-loading';
+        empty.textContent = 'Empty folder';
+        childrenEl.appendChild(empty);
+        return;
+      }
+
+      // If this folder itself has audio files, show a "Load this folder" entry
+      if (audioCount > 0) {
+        const { node: loadNode, row: loadRow } = makeRow({
+          icon: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v7M6.5 9l-2.5-2.5M6.5 9l2.5-2.5M2 11h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+          name: `Load ${audioCount} track${audioCount === 1 ? '' : 's'} here`,
+          audioCount: 0,
+          indent: indent + 1,
+          hasChildren: false,
+          onClick: (row) => {
+            if (activeBrowsePath) browseTree.querySelector(`[data-path="${CSS.escape(activeBrowsePath)}"]`)?.classList.remove('active-folder');
+            activeBrowsePath = path;
+            loadRow.classList.add('active-folder');
+            loadFolder(path);
+          },
+        });
+        loadNode.querySelector('.browse-row').dataset.path = path;
+        childrenEl.appendChild(loadNode);
+      }
+
+      for (const dir of dirs) {
+        addFolderRow(childrenEl, dir.name, dir.path, indent + 1);
+      }
+    }
+
+    function addFolderRow(container, name, fullPath, indent = 0) {
+      const { node, row, arrowEl, childrenEl } = makeRow({
+        icon: svgFolder,
+        name,
+        audioCount: 0,
+        indent,
+        hasChildren: true,
+        onArrowClick: () => expandFolder(fullPath, childrenEl, arrowEl, indent),
+        onClick: () => expandFolder(fullPath, childrenEl, arrowEl, indent),
+      });
+      row.dataset.path = fullPath;
+      container.appendChild(node);
+    }
+
+    async function populateBrowseRoots() {
+      browseTree.innerHTML = '';
+
+      // Volumes section
+      const volLabel = document.createElement('div');
+      volLabel.className = 'browse-drive-section';
+      volLabel.textContent = 'Drives';
+      browseTree.appendChild(volLabel);
+
+      const { dirs: volumes } = await window.m13.listDirectory('/Volumes');
+      for (const vol of volumes) {
+        const { node, row, arrowEl, childrenEl } = makeRow({
+          icon: svgDrive,
+          name: vol.name,
+          audioCount: 0,
+          indent: 0,
+          hasChildren: true,
+          onArrowClick: () => expandFolder(vol.path, childrenEl, arrowEl, 0),
+          onClick: () => expandFolder(vol.path, childrenEl, arrowEl, 0),
+        });
+        row.dataset.path = vol.path;
+        browseTree.appendChild(node);
+      }
+
+      // Local folders section
+      const localLabel = document.createElement('div');
+      localLabel.className = 'browse-drive-section';
+      localLabel.style.marginTop = '8px';
+      localLabel.textContent = 'Local';
+      browseTree.appendChild(localLabel);
+
+      const home = window.location.pathname.split('/').slice(0, 3).join('/') || '/Users/' + (await window.m13.getLastFolder() || '').split('/')[2];
+      const localRoots = [
+        { name: 'Music', path: `${require ? '' : '/Users/'}music` },
+      ];
+      // Derive home from last folder path
+      const lastF = await window.m13.getLastFolder();
+      if (lastF) {
+        const parts = lastF.split('/');
+        const homeDir = parts.slice(0, 3).join('/'); // /Users/username
+        for (const sub of ['Music', 'Desktop', 'Downloads', 'Documents']) {
+          const p = `${homeDir}/${sub}`;
+          const { node, row, arrowEl, childrenEl } = makeRow({
+            icon: svgFolder,
+            name: sub,
+            audioCount: 0,
+            indent: 0,
+            hasChildren: true,
+            onArrowClick: () => expandFolder(p, childrenEl, arrowEl, 0),
+            onClick: () => expandFolder(p, childrenEl, arrowEl, 0),
+          });
+          row.dataset.path = p;
+          browseTree.appendChild(node);
+        }
+      }
+    }
+
+    // ── Ambient Mode ─────────────────────────────────────────────────────────
+    const ambientOverlay      = document.getElementById('ambientOverlay');
+    const ambientBtn          = document.getElementById('ambientBtn');
+    const ambientClock        = document.getElementById('ambientClock');
+    const ambientIdle         = document.getElementById('ambientIdle');
+    const ambientTrackInfo    = document.getElementById('ambientTrackInfo');
+    const ambientArtworkWrap  = document.getElementById('ambientArtworkWrap');
+    const ambientTrackName    = document.getElementById('ambientTrackName');
+    const ambientTrackMeta    = document.getElementById('ambientTrackMeta');
+    const ambientProgressFill = document.getElementById('ambientProgressFill');
+    const ambientVizCanvas    = document.getElementById('ambientViz');
+    const ambientStarsCanvas  = document.getElementById('ambientStars');
+    const ambientVizCtx       = ambientVizCanvas.getContext('2d');
+    const ambientStarsCtx     = ambientStarsCanvas.getContext('2d');
+
+    let ambientActive  = false;
+    let ambientRafId   = null;
+    let ambientClockId = null;
+
+    // ── Web Audio API (lazy init) ─────────────────────────────────────────────
+    let audioCtx    = null;
+    let analyser    = null;
+    let audioSource = null;
+    let freqData    = null;
+
+    function initAudioAnalyser() {
+      if (audioCtx) return;
+      audioCtx    = new (window.AudioContext || window.webkitAudioContext)();
+      analyser    = audioCtx.createAnalyser();
+      analyser.fftSize              = 512;
+      analyser.smoothingTimeConstant = 0.78;
+      audioSource = audioCtx.createMediaElementSource(audioPlayer);
+      audioSource.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    // ── Star field ────────────────────────────────────────────────────────────
+    const STAR_COUNT = 180;
+    const stars = [];
+
+    function initStars() {
+      const w = ambientStarsCanvas.width;
+      const h = ambientStarsCanvas.height;
+      stars.length = 0;
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x:      Math.random() * w,
+          y:      Math.random() * h,
+          r:      Math.random() * 1.4 + 0.2,
+          base:   Math.random() * 0.55 + 0.1,   // baseline opacity
+          range:  Math.random() * 0.35,          // twinkle amplitude
+          phase:  Math.random() * Math.PI * 2,
+          speed:  (Math.random() * 0.4 + 0.1) * 0.01,
+        });
+      }
+    }
+
+    function drawStars(t) {
+      const w = ambientStarsCanvas.width;
+      const h = ambientStarsCanvas.height;
+      ambientStarsCtx.clearRect(0, 0, w, h);
+      for (const s of stars) {
+        const alpha = s.base + Math.sin(s.phase + t * s.speed) * s.range;
+        ambientStarsCtx.beginPath();
+        ambientStarsCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ambientStarsCtx.fillStyle = `rgba(255,255,255,${Math.max(0, alpha)})`;
+        ambientStarsCtx.fill();
+      }
+    }
+
+    // ── Visualiser ────────────────────────────────────────────────────────────
+    function drawVisualiser() {
+      const w = ambientVizCanvas.width;
+      const h = ambientVizCanvas.height;
+      ambientVizCtx.clearRect(0, 0, w, h);
+
+      if (!analyser || audioPlayer.paused) return;
+
+      analyser.getByteFrequencyData(freqData);
+
+      // Use lower 60% of frequency bins for musical content (skip ultrasonic)
+      const usable  = Math.floor(freqData.length * 0.60);
+      const bars    = 80;
+      const gap     = 3;
+      const barW    = (w - gap * (bars - 1)) / bars;
+
+      for (let i = 0; i < bars; i++) {
+        // Sample from freqData with slight logarithmic weighting toward bass
+        const idx   = Math.floor(Math.pow(i / bars, 0.7) * usable);
+        const val   = freqData[idx] / 255;
+        const barH  = Math.max(2, val * h * 0.95);
+        const x     = i * (barW + gap);
+        const y     = h - barH;
+
+        // Gradient: accent at top, dimmer at bottom
+        const grad = ambientVizCtx.createLinearGradient(0, y, 0, h);
+        grad.addColorStop(0,   `rgba(200,241,53,${0.85 + val * 0.15})`);
+        grad.addColorStop(0.6, `rgba(200,241,53,${0.35})`);
+        grad.addColorStop(1,   `rgba(200,241,53,0.10)`);
+
+        ambientVizCtx.fillStyle = grad;
+        ambientVizCtx.beginPath();
+        ambientVizCtx.roundRect(x, y, barW, barH, [3, 3, 0, 0]);
+        ambientVizCtx.fill();
+      }
+    }
+
+    // ── Clock ────────────────────────────────────────────────────────────────
+    function updateAmbientClock() {
+      const now = new Date();
+      const hh  = String(now.getHours()).padStart(2, '0');
+      const mm  = String(now.getMinutes()).padStart(2, '0');
+      const ss  = String(now.getSeconds()).padStart(2, '0');
+      ambientClock.textContent = `${hh}:${mm}:${ss}`;
+    }
+
+    // ── Progress ─────────────────────────────────────────────────────────────
+    function updateAmbientProgress() {
+      if (!audioPlayer.duration) { ambientProgressFill.style.width = '0%'; return; }
+      const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+      ambientProgressFill.style.width = `${pct.toFixed(2)}%`;
+    }
+
+    // ── Canvas sizing ─────────────────────────────────────────────────────────
+    function resizeAmbientCanvases() {
+      const dpr = window.devicePixelRatio || 1;
+      const w   = window.innerWidth;
+      const h   = window.innerHeight;
+
+      ambientStarsCanvas.width  = w * dpr;
+      ambientStarsCanvas.height = h * dpr;
+      ambientStarsCtx.scale(dpr, dpr);
+      // Reset star positions to new dimensions
+      initStars();
+
+      ambientVizCanvas.width  = w * dpr;
+      ambientVizCanvas.height = ambientVizCanvas.offsetHeight * dpr;
+      ambientVizCtx.scale(dpr, dpr);
+    }
+
+    // ── RAF loop ─────────────────────────────────────────────────────────────
+    function ambientLoop(t) {
+      drawStars(t * 0.001);
+      drawVisualiser();
+      updateAmbientProgress();
+      ambientRafId = requestAnimationFrame(ambientLoop);
+    }
+
+    // ── Track info update ────────────────────────────────────────────────────
+    function updateAmbientTrackInfo() {
+      if (!currentTrack) {
+        ambientIdle.hidden      = false;
+        ambientTrackInfo.hidden = true;
+        return;
+      }
+      ambientIdle.hidden      = true;
+      ambientTrackInfo.hidden = false;
+
+      ambientTrackName.textContent = currentTrack.name;
+
+      const parts = [
+        currentTrack.artist ? `<span>${currentTrack.artist}</span>` : null,
+        currentTrack.bpm    ? `<span class="accent">${currentTrack.bpm} BPM</span>` : null,
+        currentTrack.key    ? `<span class="accent">${currentTrack.key}</span>` : null,
+      ].filter(Boolean);
+      ambientTrackMeta.innerHTML = parts.join('<span class="sep">·</span>');
+
+      // Artwork
+      const cached = artworkCache.get(currentTrack.path);
+      if (cached) {
+        ambientArtworkWrap.innerHTML = `<img class="ambient-artwork" src="${cached}" alt="" />`;
+      } else {
+        // Show spinning disc placeholder while loading
+        ambientArtworkWrap.innerHTML = `
+          <div class="ambient-artwork-placeholder">
+            <svg class="ambient-disc" width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="36" stroke="rgba(200,241,53,0.3)" stroke-width="1.5"/>
+              <circle cx="40" cy="40" r="22" stroke="rgba(200,241,53,0.15)" stroke-width="1"/>
+              <circle cx="40" cy="40" r="6"  fill="rgba(200,241,53,0.2)"/>
+            </svg>
+          </div>`;
+        fetchArtwork(currentTrack.path).then(url => {
+          if (url && ambientActive) {
+            ambientArtworkWrap.innerHTML = `<img class="ambient-artwork" src="${url}" alt="" />`;
+          }
+        });
+      }
+    }
+
+    // ── Ambient controls ─────────────────────────────────────────────────────
+    const ambientControls    = document.getElementById('ambientControls');
+    const ambientExitBtn     = document.getElementById('ambientExitBtn');
+    const ambientPlayPauseBtn = document.getElementById('ambientPlayPauseBtn');
+    const ambientPlayIcon    = document.getElementById('ambientPlayIcon');
+    const ambientPauseIcon   = document.getElementById('ambientPauseIcon');
+    const ambientPrevBtn     = document.getElementById('ambientPrevBtn');
+    const ambientNextBtn     = document.getElementById('ambientNextBtn');
+    const ambientRewBtn      = document.getElementById('ambientRewBtn');
+    const ambientFwdBtn      = document.getElementById('ambientFwdBtn');
+    const ambientSeekWrap    = document.getElementById('ambientSeekWrap');
+    const ambientSeekFill    = document.getElementById('ambientSeekFill');
+    const ambientSeekThumb   = document.getElementById('ambientSeekThumb');
+    const ambientCtrlCurrent = document.getElementById('ambientCtrlCurrent');
+    const ambientCtrlDuration = document.getElementById('ambientCtrlDuration');
+    const ambientVolSlider   = document.getElementById('ambientVolSlider');
+
+    function syncAmbientControls() {
+      const playing = !audioPlayer.paused;
+      ambientPlayIcon.hidden  = playing;
+      ambientPauseIcon.hidden = !playing;
+      const cur = audioPlayer.currentTime || 0;
+      const dur = audioPlayer.duration   || 0;
+      ambientCtrlCurrent.textContent  = formatTime(cur);
+      ambientCtrlDuration.textContent = formatTime(dur);
+      const pct = dur ? (cur / dur) * 100 : 0;
+      ambientSeekFill.style.width  = `${pct}%`;
+      ambientSeekThumb.style.left  = `calc(${pct}% - 5px)`;
+      ambientVolSlider.value = audioPlayer.volume;
+    }
+
+    // Keep controls in sync while ambient is active
+    audioPlayer.addEventListener('timeupdate', () => { if (ambientActive) syncAmbientControls(); });
+    audioPlayer.addEventListener('play',   () => { if (ambientActive) syncAmbientControls(); });
+    audioPlayer.addEventListener('pause',  () => { if (ambientActive) syncAmbientControls(); });
+    audioPlayer.addEventListener('loadedmetadata', () => { if (ambientActive) syncAmbientControls(); });
+
+    // Play / Pause
+    ambientPlayPauseBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePlayback(); });
+
+    // Rewind / Forward 9 s
+    ambientRewBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 9);
+    });
+    ambientFwdBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + 9);
+    });
+
+    // Prev / Next — use queue if populated, else walk the filtered track list
+    function ambientPrev() {
+      if (playlist.length > 1) {
+        const idx = playlist.findIndex(t => t.path === (currentTrack && currentTrack.path));
+        if (idx > 0) { playTrack(playlist[idx - 1]); return; }
+      }
+      const list = getFilteredTracks();
+      const idx = list.findIndex(t => t.path === (currentTrack && currentTrack.path));
+      if (idx > 0) playTrack(list[idx - 1]);
+    }
+    function ambientNext() {
+      if (playlist.length > 1) {
+        const idx = playlist.findIndex(t => t.path === (currentTrack && currentTrack.path));
+        if (idx >= 0 && idx < playlist.length - 1) { playTrack(playlist[idx + 1]); return; }
+      }
+      const list = getFilteredTracks();
+      const idx = list.findIndex(t => t.path === (currentTrack && currentTrack.path));
+      if (idx >= 0 && idx < list.length - 1) playTrack(list[idx + 1]);
+    }
+    ambientPrevBtn.addEventListener('click', (e) => { e.stopPropagation(); ambientPrev(); });
+    ambientNextBtn.addEventListener('click', (e) => { e.stopPropagation(); ambientNext(); });
+
+    // Seek bar — click to seek
+    ambientSeekWrap.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = ambientSeekWrap.getBoundingClientRect();
+      const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      if (audioPlayer.duration) audioPlayer.currentTime = pct * audioPlayer.duration;
+    });
+    // Drag seek
+    let seekDragging = false;
+    ambientSeekWrap.addEventListener('mousedown', (e) => { e.stopPropagation(); seekDragging = true; });
+    document.addEventListener('mousemove', (e) => {
+      if (!seekDragging || !ambientActive) return;
+      const rect = ambientSeekWrap.getBoundingClientRect();
+      const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      if (audioPlayer.duration) {
+        audioPlayer.currentTime = pct * audioPlayer.duration;
+        syncAmbientControls();
+      }
+    });
+    document.addEventListener('mouseup', () => { seekDragging = false; });
+
+    // Volume
+    ambientVolSlider.addEventListener('input', (e) => {
+      e.stopPropagation();
+      audioPlayer.volume = parseFloat(ambientVolSlider.value);
+      if (volumeControl) volumeControl.value = ambientVolSlider.value;
+    });
+    ambientVolSlider.addEventListener('click', (e) => e.stopPropagation());
+
+    // Exit button
+    ambientExitBtn.addEventListener('click', (e) => { e.stopPropagation(); exitAmbient(); });
+
+    // Stop overlay-click-to-exit when clicking controls
+    ambientControls.addEventListener('click', (e) => e.stopPropagation());
+
+    // ── Cursor hide on idle ──────────────────────────────────────────────────
+    let cursorHideTimer = null;
+    function showCursorBriefly() {
+      ambientOverlay.classList.add('cursor-visible');
+      ambientControls.classList.add('visible');
+      ambientExitBtn.classList.add('visible');
+      if (cursorHideTimer) clearTimeout(cursorHideTimer);
+      cursorHideTimer = setTimeout(() => {
+        ambientOverlay.classList.remove('cursor-visible');
+        ambientControls.classList.remove('visible');
+        ambientExitBtn.classList.remove('visible');
+      }, 3000);
+    }
+
+    // ── Enter / Exit ─────────────────────────────────────────────────────────
+    function enterAmbient() {
+      ambientActive = true;
+      ambientBtn.classList.add('active');
+
+      resizeAmbientCanvases();
+      updateAmbientTrackInfo();
+
+      // Resume AudioContext if suspended (browsers require user gesture)
+      initAudioAnalyser();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+      ambientOverlay.classList.add('active');
+
+      ambientClockId = setInterval(updateAmbientClock, 1000);
+      updateAmbientClock();
+
+      cancelAnimationFrame(ambientRafId);
+      ambientRafId = requestAnimationFrame(ambientLoop);
+
+      syncAmbientControls();
+      ambientOverlay.addEventListener('mousemove', showCursorBriefly, { passive: true });
+    }
+
+    function exitAmbient() {
+      ambientActive = false;
+      ambientBtn.classList.remove('active');
+      ambientOverlay.classList.remove('active');
+      ambientOverlay.classList.remove('cursor-visible');
+      ambientControls.classList.remove('visible');
+      ambientExitBtn.classList.remove('visible');
+
+      clearInterval(ambientClockId);
+      cancelAnimationFrame(ambientRafId);
+      ambientRafId = null;
+
+      ambientOverlay.removeEventListener('mousemove', showCursorBriefly);
+      if (cursorHideTimer) { clearTimeout(cursorHideTimer); cursorHideTimer = null; }
+    }
+
+    ambientBtn.addEventListener('click', () => {
+      ambientActive ? exitAmbient() : enterAmbient();
+    });
+
+    // Click anywhere on overlay to exit (not on interactive elements)
+    ambientOverlay.addEventListener('click', exitAmbient);
+
+    // Escape toggles ambient — fires even when an input is focused
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (ambientActive) { exitAmbient(); e.preventDefault(); }
+      }
+    });
+
+    // Keep ambient track info fresh when track changes
+    audioPlayer.addEventListener('play',  () => { if (ambientActive) updateAmbientTrackInfo(); });
+    audioPlayer.addEventListener('pause', () => { /* keep display, just stop bars */ });
+
+    // Re-size canvases on window resize
+    window.addEventListener('resize', () => { if (ambientActive) resizeAmbientCanvases(); }, { passive: true });
+
+    // ── Keyboard scanning ────────────────────────────────────────────────────
+    // Multi-tap: accumulate taps on the same arrow key within 400 ms.
+    // 1 tap = ±3 s, 2 taps = ±6 s, 3+ taps = ±9 s.
+    let arrowTapKey   = null;   // 'ArrowLeft' | 'ArrowRight' | null
+    let arrowTapCount = 0;
+    let arrowTapTimer = null;
+
+    function flushArrowTaps() {
+      if (!arrowTapKey || !currentTrack) { arrowTapKey = null; arrowTapCount = 0; return; }
+      const dir  = arrowTapKey === 'ArrowRight' ? 1 : -1;
+      const secs = Math.min(arrowTapCount, 3) * 3;  // 3 / 6 / 9
+      audioPlayer.currentTime = Math.max(0, Math.min(
+        audioPlayer.currentTime + dir * secs,
+        audioPlayer.duration || 0
+      ));
+      arrowTapKey = null;
+      arrowTapCount = 0;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      // Never intercept when the user is typing in an input or contenteditable
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+      // Don't intercept when modifier keys are held (keep Cmd+R etc. working)
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (currentTrack) togglePlayback();
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (!currentTrack) return;
+
+        if (e.key !== arrowTapKey) {
+          // Switched direction — flush any pending taps for the old key first
+          if (arrowTapTimer) { clearTimeout(arrowTapTimer); arrowTapTimer = null; }
+          flushArrowTaps();
+          arrowTapKey = e.key;
+          arrowTapCount = 0;
+        }
+
+        arrowTapCount++;
+        if (arrowTapTimer) clearTimeout(arrowTapTimer);
+        arrowTapTimer = setTimeout(() => {
+          arrowTapTimer = null;
+          flushArrowTaps();
+        }, 400);
+      }
+    });
+
+    // ── Playlist ─────────────────────────────────────────────────────────────
+    let playlist = [];  // array of track objects
+
+    const playlistPanel     = document.getElementById('playlistPanel');
+    const plBody            = document.getElementById('plBody');
+    const plCountBadge      = document.getElementById('plCountBadge');
+    const plDurationLabel   = document.getElementById('plDurationLabel');
+    const plExportBtn       = document.getElementById('plExportBtn');
+    const plClearBtn        = document.getElementById('plClearBtn');
+    const plCloseBtn        = document.getElementById('plCloseBtn');
+    const playlistToggleBtn = document.getElementById('playlistToggleBtn');
+    const plBadge           = document.getElementById('plBadge');
+
+    function formatHMS(seconds) {
+      if (!seconds || isNaN(seconds)) return null;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      return h > 0
+        ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        : `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function renderPlaylist() {
+      const n = playlist.length;
+      plCountBadge.textContent = String(n);
+      plBadge.textContent = String(n);
+      plBadge.classList.toggle('visible', n > 0);
+
+      // Duration sum (tracks may not have duration; skip missing)
+      const totalSec = playlist.reduce((s, t) => s + (Number(t.duration) || 0), 0);
+      plDurationLabel.textContent = totalSec > 0 ? formatHMS(totalSec) : '';
+
+      plExportBtn.disabled = n === 0;
+      document.getElementById('plExportM3uBtn').disabled = n === 0;
+      document.getElementById('plExportXmlBtn').disabled = n === 0;
+
+      if (n === 0) {
+        plBody.innerHTML = '<div class="playlist-empty">Add tracks with the <strong style="color:var(--accent)">+</strong> button</div>';
+        return;
+      }
+
+      plBody.innerHTML = playlist.map((t, i) => {
+        const cachedArt = artworkCache.get(t.path);
+        const artHtml = cachedArt
+          ? `<img class="playlist-item-art" src="${cachedArt}" alt="" />`
+          : `<div class="playlist-item-art"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div>`;
+        const meta = [t.artist, t.bpm ? `${t.bpm} BPM` : null, t.key].filter(Boolean).join(' · ');
+        return `<div class="playlist-item" data-pl-idx="${i}">
+          <span class="playlist-item-num">${i + 1}</span>
+          ${artHtml}
+          <div class="playlist-item-info">
+            <div class="playlist-item-name">${t.name}</div>
+            <div class="playlist-item-meta">${meta || '—'}</div>
+          </div>
+          <button class="playlist-item-remove" data-remove-idx="${i}" title="Remove" type="button">✕</button>
+        </div>`;
+      }).join('');
+
+      // Wire remove buttons
+      plBody.querySelectorAll('.playlist-item-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.removeIdx, 10);
+          playlist.splice(idx, 1);
+          renderPlaylist();
+          renderTracks(tracks); // refresh + button state in table
+        });
+      });
+
+      // Lazy-load artwork for new items
+      playlist.forEach(t => {
+        if (!artworkCache.has(t.path)) {
+          fetchArtwork(t.path).then(url => {
+            if (!url) return;
+            const img = plBody.querySelector(`.playlist-item[data-pl-idx] .playlist-item-art`);
+            // Re-render is simpler here since indices may shift
+            renderPlaylist();
+          });
+        }
+      });
+    }
+
+    function addToPlaylist(track) {
+      if (playlist.some(t => t.path === track.path)) return; // already in queue
+      playlist.push(track);
+      renderPlaylist();
+      renderTracks(tracks); // update + button state
+      syncPlayerQueueBtn();
+    }
+
+    // Delegate add-to-playlist clicks from the track table
+    trackTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.add-row-btn');
+      if (!btn) return;
+      const p = btn.dataset.plPath;
+      const track = tracks.find(t => t.path === p);
+      if (track) addToPlaylist(track);
+    });
+
+    // Player bar queue button
+    const playerAddToQueueBtn = document.getElementById('playerAddToQueueBtn');
+
+    function syncPlayerQueueBtn() {
+      if (!currentTrack) return;
+      const inQueue = playlist.some(t => t.path === currentTrack.path);
+      playerAddToQueueBtn.classList.toggle('in-queue', inQueue);
+      playerAddToQueueBtn.title = inQueue ? 'Already in queue' : 'Add to queue';
+    }
+
+    playerAddToQueueBtn.addEventListener('click', () => {
+      if (!currentTrack) return;
+      addToPlaylist(currentTrack);
+      syncPlayerQueueBtn();
+    });
+
+    // Open/close playlist panel
+    function openPlaylist()  { playlistPanel.classList.add('open'); playlistToggleBtn.classList.add('active'); }
+    function closePlaylist() { playlistPanel.classList.remove('open'); playlistToggleBtn.classList.remove('active'); }
+
+    playlistToggleBtn.addEventListener('click', () => {
+      playlistPanel.classList.contains('open') ? closePlaylist() : openPlaylist();
+    });
+    // ── Playlist file export helpers ─────────────────────────────────────────
+    const plStatusMsg = document.getElementById('plStatusMsg');
+    let plStatusTimer = null;
+
+    function showPlStatus(msg, type = '') {
+      plStatusMsg.textContent = msg;
+      plStatusMsg.className = 'playlist-status-msg' + (type ? ` ${type}` : '');
+      plStatusMsg.hidden = false;
+      if (plStatusTimer) clearTimeout(plStatusTimer);
+      plStatusTimer = setTimeout(() => { plStatusMsg.hidden = true; }, 6000);
+    }
+
+    function todayStamp() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // M3U — duration -1 when unknown (spec-compliant fallback)
+    function buildM3U(tracks) {
+      const lines = ['#EXTM3U', ''];
+      for (const t of tracks) {
+        const dur    = Number(t.duration) > 0 ? Math.round(t.duration) : -1;
+        const artist = t.artist || '';
+        const title  = t.name  || '';
+        const display = artist ? `${artist} - ${title}` : title;
+        lines.push(`#EXTINF:${dur},${display}`);
+        lines.push(t.path);
+        lines.push('');
+      }
+      return lines.join('\n');
+    }
+
+    // Rekordbox XML — compatible with File → Import rekordbox XML in RB6/7
+    function buildRekordboxXML(tracks) {
+      function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+                               .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+      // Convert file path to file URI (rekordbox expects file://localhost/...)
+      function toURI(p) {
+        return 'file://localhost' + encodeURI(p).replace(/%2F/g, '/');
+      }
+      // Map extension to rekordbox Kind string
+      function kind(ext) {
+        const m = { '.aiff':'AIFF File', '.aif':'AIFF File', '.mp3':'MP3 File',
+                    '.wav':'WAV File', '.flac':'FLAC File', '.m4a':'M4A File',
+                    '.alac':'ALAC File', '.ogg':'OGG File' };
+        return m[(ext||'').toLowerCase()] || 'Audio File';
+      }
+
+      const entries = tracks.map((t, i) => {
+        const dur = Number(t.duration) > 0 ? Math.round(t.duration) : 0;
+        const bpm = t.bpm ? Number(t.bpm).toFixed(2) : '0.00';
+        return [
+          `    <TRACK TrackID="${i + 1}"`,
+          `           Name="${esc(t.name)}"`,
+          `           Artist="${esc(t.artist)}"`,
+          `           Genre="${esc(t.genre)}"`,
+          `           Kind="${kind(t.ext)}"`,
+          `           TotalTime="${dur}"`,
+          `           AverageBpm="${bpm}"`,
+          `           Tonality="${esc(t.key)}"`,
+          `           Location="${esc(toURI(t.path))}" />`,
+        ].join('\n');
+      }).join('\n');
+
+      const trackRefs = tracks.map((_, i) =>
+        `        <TRACK Key="${i + 1}" />`
+      ).join('\n');
+
+      const date = new Date().toISOString().slice(0, 10);
+
+      return [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<DJ_PLAYLISTS Version="1.0.0">',
+        '  <PRODUCT Name="rekordbox" Version="6.0.0" Company="AlphaTheta" />',
+        `  <COLLECTION Entries="${tracks.length}">`,
+        entries,
+        '  </COLLECTION>',
+        '  <PLAYLISTS>',
+        '    <NODE Type="0" Name="ROOT" Count="1">',
+        `      <NODE Type="1" Name="M13 Queue ${date}" KeyType="0" Entries="${tracks.length}">`,
+        trackRefs,
+        '      </NODE>',
+        '    </NODE>',
+        '  </PLAYLISTS>',
+        '</DJ_PLAYLISTS>',
+      ].join('\n');
+    }
+
+    async function exportPlaylistFile({ content, defaultName, filters, label }) {
+      const result = await window.m13.savePlaylistFile({ content, defaultName, filters });
+      if (result.canceled) return;
+      const short = result.filePath.split('/').pop();
+      showPlStatus(`✓ ${label} saved — ${short}`, 'success');
+    }
+
+    document.getElementById('plExportM3uBtn').addEventListener('click', async () => {
+      if (playlist.length === 0) return;
+      await exportPlaylistFile({
+        content:     buildM3U(playlist),
+        defaultName: `M13 Queue ${todayStamp()}.m3u`,
+        filters:     [{ name: 'M3U Playlist', extensions: ['m3u'] }],
+        label:       'M3U playlist',
+      });
+    });
+
+    document.getElementById('plExportXmlBtn').addEventListener('click', async () => {
+      if (playlist.length === 0) return;
+      await exportPlaylistFile({
+        content:     buildRekordboxXML(playlist),
+        defaultName: `M13 Queue ${todayStamp()}.xml`,
+        filters:     [{ name: 'Rekordbox XML', extensions: ['xml'] }],
+        label:       'Rekordbox XML',
+      });
+    });
+
+    plCloseBtn.addEventListener('click', closePlaylist);
+
+    plClearBtn.addEventListener('click', () => {
+      playlist = [];
+      renderPlaylist();
+      renderTracks(tracks);
+    });
+
+    // Export playlist — pick a dest folder then copy each track into it
+    plExportBtn.addEventListener('click', async () => {
+      if (playlist.length === 0) return;
+      const dest = await window.m13.selectDestFolder();
+      if (!dest) return;
+
+      plExportBtn.disabled = true;
+      plExportBtn.textContent = 'Exporting…';
+
+      let done = 0;
+      for (const t of playlist) {
+        await window.m13.copyTrack(t.path, dest);
+        done++;
+        plExportBtn.textContent = `Exporting… ${done}/${playlist.length}`;
+      }
+
+      plExportBtn.textContent = `✓ Exported ${done} tracks`;
+      setTimeout(() => {
+        plExportBtn.disabled = playlist.length === 0;
+        plExportBtn.textContent = 'Export to Folder';
+      }, 3000);
     });
   </script>
 </body>

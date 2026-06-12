@@ -15,7 +15,10 @@
       "Bash(node -e \"const m = require\\('music-metadata'\\); console.log\\(Object.keys\\(m\\)\\)\")",
       "Bash(npm install *)",
       "Bash(node -e \"const id3 = require\\('node-id3'\\); console.log\\(Object.keys\\(id3\\).join\\(', '\\)\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(git -C /Users/pints/M13 diff HEAD -- index.html)",
+      "Bash(git -C /Users/pints/M13 show HEAD:index.html)"
     ]
   }
 }

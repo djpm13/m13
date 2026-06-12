@@ -30,6 +30,13 @@ contextBridge.exposeInMainWorld('m13', {
     ipcRenderer.on('folder-copy-progress', handler);
     return () => ipcRenderer.removeListener('folder-copy-progress', handler);
   },
+  savePlaylistFile: (opts) => ipcRenderer.invoke('save-playlist-file', opts),
+  listDirectory: (dirPath) => ipcRenderer.invoke('list-directory', dirPath),
+  onScanProgress: (callback) => {
+    const handler = (_event, count) => callback(count);
+    ipcRenderer.on('scan-progress', handler);
+    return () => ipcRenderer.removeListener('scan-progress', handler);
+  },
   selectDestFolder: () => ipcRenderer.invoke('select-dest-folder'),
   copyTrack: (srcPath, destFolder) => ipcRenderer.invoke('copy-track', { srcPath, destFolder }),
   onCopyProgress: (callback) => {

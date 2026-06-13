@@ -70,4 +70,11 @@ contextBridge.exposeInMainWorld('m13', {
     ipcRenderer.on('volume-unmounted', handler);
     return () => ipcRenderer.removeListener('volume-unmounted', handler);
   },
+  onMenuOpenLibrary: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu-open-library', handler);
+    return () => ipcRenderer.removeListener('menu-open-library', handler);
+  },
+  loadBangers: () => ipcRenderer.invoke('load-bangers'),
+  saveBangers: (bangers) => ipcRenderer.invoke('save-bangers', bangers),
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, session } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const http = require('http');
@@ -271,6 +271,145 @@ function streamAiffAsWav(filePath, req, res) {
 
 let mainWindow;
 
+let aboutWindow = null;
+
+function createAboutWindow() {
+  if (aboutWindow && !aboutWindow.isDestroyed()) {
+    aboutWindow.focus();
+    return;
+  }
+  aboutWindow = new BrowserWindow({
+    width: 340,
+    height: 420,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    title: 'About M13',
+    titleBarStyle: 'hiddenInset',
+    backgroundColor: '#080810',
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+  aboutWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:#080810;color:#efefef;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 32px 32px;gap:0;-webkit-app-region:drag}
+  .logo{font-size:52px;font-weight:900;color:#c8f135;letter-spacing:-0.05em;line-height:1;margin-bottom:4px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#c8f135;box-shadow:0 0 10px rgba(200,241,53,0.5);margin:0 auto 18px}
+  .app-name{font-size:17px;font-weight:700;color:#efefef;margin-bottom:4px}
+  .version{font-size:12px;color:#666;margin-bottom:18px;font-variant-numeric:tabular-nums}
+  .tagline{font-size:13px;color:#bdbdbd;line-height:1.55;margin-bottom:6px}
+  .desc{font-size:12px;color:#666;line-height:1.5;margin-bottom:24px;font-style:italic}
+  .divider{width:40px;height:1px;background:#222;margin:0 auto 20px}
+  .built-by{font-size:12px;color:#555;margin-bottom:6px}
+  a{color:#c8f135;text-decoration:none;font-size:12px;font-weight:600;-webkit-app-region:no-drag}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+  <div class="logo">M13</div>
+  <div class="dot"></div>
+  <div class="app-name">DJ Library &amp; Discovery</div>
+  <div class="version">Version 1.0.0</div>
+  <div class="tagline">Your entire DJ career.<br>Finally organised.</div>
+  <div class="desc">The library app built by a DJ, for DJs.</div>
+  <div class="divider"></div>
+  <div class="built-by">Built by dj pm</div>
+  <a href="https://m13app.com" onclick="require('electron').shell.openExternal('https://m13app.com');return false">m13app.com</a>
+</body>
+</html>`));
+  aboutWindow.on('closed', () => { aboutWindow = null; });
+}
+
+function buildMenu() {
+  const isMac = process.platform === 'darwin';
+  const template = [
+    ...(isMac ? [{
+      label: 'M13',
+      submenu: [
+        {
+          label: 'About M13',
+          click: () => createAboutWindow(),
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates…',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('check-for-updates');
+            }
+          },
+        },
+        {
+          label: 'Preferences…',
+          accelerator: 'Cmd+,',
+          enabled: false, // placeholder — wire up when preferences are implemented
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide', label: 'Hide M13' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit', label: 'Quit M13' },
+      ],
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Library Folder…',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('menu-open-library');
+            }
+          },
+        },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' }, { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [{ type: 'separator' }, { role: 'front' }] : []),
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Visit m13app.com',
+          click: () => shell.openExternal('https://m13app.com'),
+        },
+        {
+          label: 'Send Feedback…',
+          click: () => shell.openExternal('mailto:hello@m13app.com'),
+        },
+        ...(!isMac ? [{ type: 'separator' }, { label: 'About M13', click: () => createAboutWindow() }] : []),
+      ],
+    },
+  ];
+
+  return Menu.buildFromTemplate(template);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -385,6 +524,9 @@ async function scanFolderRecursively(folderPath, onProgress) {
 }
 
 app.whenReady().then(() => {
+  app.setName('M13');
+  Menu.setApplicationMenu(buildMenu());
+
   session.defaultSession.protocol.registerFileProtocol('file', (request, callback) => {
     const url = new URL(request.url);
     callback({ path: decodeURIComponent(url.pathname) });
@@ -1083,6 +1225,23 @@ ipcMain.handle('scan-folder', async (_event, folderPath) => {
   if (mainWindow && !mainWindow.isDestroyed())
     mainWindow.webContents.send('scan-progress', results.length);
   return results;
+});
+
+const BANGERS_PATH = path.join(os.homedir(), 'M13', 'bangers.json');
+
+ipcMain.handle('load-bangers', () => {
+  try {
+    if (!fs.existsSync(BANGERS_PATH)) return [];
+    return JSON.parse(fs.readFileSync(BANGERS_PATH, 'utf8'));
+  } catch { return []; }
+});
+
+ipcMain.handle('save-bangers', (_event, bangers) => {
+  try {
+    fs.mkdirSync(path.dirname(BANGERS_PATH), { recursive: true });
+    fs.writeFileSync(BANGERS_PATH, JSON.stringify(bangers, null, 2), 'utf8');
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message }; }
 });
 
 ipcMain.handle('list-directory', (_event, dirPath) => {

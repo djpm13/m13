@@ -16,14 +16,14 @@
       --surface-3:   #1d1d1d;
       --border:      #242424;
       --border-2:    #2e2e2e;
-      --accent:      #c8f135;
-      --accent-dim:  rgba(200,241,53,0.10);
-      --accent-glow: rgba(200,241,53,0.20);
+      --accent:      #f0c040;
+      --accent-dim:  rgba(240,192,64,0.10);
+      --accent-glow: rgba(240,192,64,0.20);
       --text:        #efefef;
       --text-2:      #bdbdbd;
       --muted:       #787878;
       --muted-2:     #444444;
-      --green:       #6ee786;
+      --green:       #a8d8ee;
       --red:         #ff6b6b;
       --amber:       #ffb547;
       --t:           200ms ease;
@@ -38,6 +38,10 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--muted-2); }
+    /* Track-table gets gold scrollbar on hover */
+    .table-wrap::-webkit-scrollbar-thumb { background: rgba(240,192,64,0.22); }
+    .table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(240,192,64,0.55); }
+    .table-wrap::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
 
     /* ── Base ──────────────────────────────────────────────────────────────── */
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -58,7 +62,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 24px;
+      padding: 10px 24px;
       border-bottom: 1px solid var(--border);
       background: rgba(9,9,9,0.92);
       backdrop-filter: blur(20px);
@@ -70,7 +74,7 @@
       width: 10px; height: 10px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 0 3px rgba(200,241,53,0.14), 0 0 12px rgba(200,241,53,0.25);
+      box-shadow: 0 0 0 3px rgba(240,192,64,0.14), 0 0 12px rgba(240,192,64,0.25);
     }
     .brand h1 {
       margin: 0;
@@ -130,7 +134,7 @@
       background: #d4f845;
       color: #0c0c0c;
       border-color: transparent;
-      box-shadow: 0 4px 18px rgba(200,241,53,0.28);
+      box-shadow: 0 4px 18px rgba(240,192,64,0.28);
     }
 
     /* ── Search ────────────────────────────────────────────────────────────── */
@@ -149,8 +153,8 @@
       transition: border-color var(--t), box-shadow var(--t);
     }
     .search-box:focus-within {
-      border-color: rgba(200,241,53,0.35);
-      box-shadow: 0 0 0 3px rgba(200,241,53,0.07);
+      border-color: rgba(240,192,64,0.35);
+      box-shadow: 0 0 0 3px rgba(240,192,64,0.07);
     }
     .search-box input {
       flex: 1;
@@ -162,6 +166,16 @@
       font-size: 12.5px;
     }
     .search-box input::placeholder { color: var(--muted); }
+    .search-box input::-webkit-search-cancel-button { display: none; }
+    .search-count {
+      font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0;
+    }
+    .search-clear {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 11px; padding: 2px 4px; border-radius: 3px; flex-shrink: 0;
+      transition: color var(--t);
+    }
+    .search-clear:hover { color: var(--text); }
 
     /* ── Filter bar ────────────────────────────────────────────────────────── */
     .filter-bar {
@@ -201,7 +215,7 @@
     .filter-pill:hover { color: var(--text-2); border-color: var(--border-2); }
     .filter-pill.active {
       background: var(--accent-dim);
-      border-color: rgba(200,241,53,0.4);
+      border-color: rgba(240,192,64,0.4);
       color: var(--accent);
     }
     .filter-divider { width: 1px; height: 14px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
@@ -263,7 +277,8 @@
     .empty-state p { margin: 0 0 20px; color: var(--muted); max-width: 420px; line-height: 1.6; font-size: 13px; }
 
     /* ── Table ─────────────────────────────────────────────────────────────── */
-    .table-wrap { overflow: auto; }
+    .table-wrap { overflow: auto; scroll-behavior: auto; overflow-anchor: none; }
+    .table-wrap tbody tr { overflow-anchor: none; }
     table { width: 100%; border-collapse: collapse; min-width: 720px; }
     th, td {
       padding: 0 14px;
@@ -285,18 +300,33 @@
       position: sticky;
       top: 0;
       z-index: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      user-select: none;
+    }
+    th .col-resize-handle {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+      background: transparent;
+      z-index: 2;
+    }
+    th .col-resize-handle:hover,
+    th .col-resize-handle.dragging {
+      background: rgba(240,192,64,0.35);
     }
     tbody tr {
       transition: background var(--t);
     }
-    tbody tr:hover { background: rgba(200,241,53,0.04); }
+    tbody tr:hover { background: rgba(240,192,64,0.04); }
     tbody tr.track-row { cursor: pointer; }
     tbody tr.track-row:hover {
-      background: rgba(200,241,53,0.055);
-      box-shadow: inset 3px 0 0 rgba(200,241,53,0.45);
+      background: rgba(240,192,64,0.055);
+      box-shadow: inset 3px 0 0 rgba(240,192,64,0.45);
     }
     tbody tr.track-row.active {
-      background: rgba(200,241,53,0.11);
+      background: rgba(240,192,64,0.11);
       box-shadow: inset 3px 0 0 var(--accent);
     }
     tbody tr.track-row.active td { color: var(--text-2); }
@@ -346,10 +376,10 @@
       height: 20px;
       padding: 0 8px;
       border-radius: 999px;
-      border: 1px solid rgba(200,241,53,0.22);
+      border: 1px solid rgba(240,192,64,0.22);
       color: var(--accent);
-      background: rgba(200,241,53,0.08);
-      box-shadow: 0 0 8px rgba(200,241,53,0.10);
+      background: rgba(240,192,64,0.08);
+      box-shadow: 0 0 8px rgba(240,192,64,0.10);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       font-size: 10px;
@@ -368,10 +398,10 @@
       box-shadow: 0 0 8px rgba(196,181,253,0.10);
     }
     .chip-wav {
-      color: #6ee7b7;
-      border-color: rgba(110,231,183,0.25);
-      background: rgba(110,231,183,0.07);
-      box-shadow: 0 0 8px rgba(110,231,183,0.10);
+      color: #a8d8ee;
+      border-color: rgba(168,216,238,0.25);
+      background: rgba(168,216,238,0.07);
+      box-shadow: 0 0 8px rgba(168,216,238,0.10);
     }
     .chip-flac {
       color: var(--amber);
@@ -412,20 +442,20 @@
       background: var(--surface-3);
       color: var(--text-2);
     }
-    .copy-row-btn:hover { color: var(--accent); border-color: rgba(200,241,53,0.3); }
+    .copy-row-btn:hover { color: var(--accent); border-color: rgba(240,192,64,0.3); }
     .add-row-btn {
       width: 24px;
       padding: 0;
-      border: 1px solid rgba(200,241,53,0.22);
-      background: rgba(200,241,53,0.07);
+      border: 1px solid rgba(240,192,64,0.22);
+      background: rgba(240,192,64,0.07);
       color: var(--accent);
       font-size: 14px;
       line-height: 1;
     }
-    .add-row-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.45); }
+    .add-row-btn:hover { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.45); }
     .add-row-btn.in-playlist {
-      background: rgba(200,241,53,0.18);
-      border-color: rgba(200,241,53,0.55);
+      background: rgba(240,192,64,0.18);
+      border-color: rgba(240,192,64,0.55);
       color: var(--accent);
     }
     tbody tr:hover .copy-row-btn,
@@ -473,8 +503,8 @@
       font-size: 10px;
       font-weight: 700;
       color: var(--accent);
-      background: rgba(200,241,53,0.1);
-      border: 1px solid rgba(200,241,53,0.25);
+      background: rgba(240,192,64,0.1);
+      border: 1px solid rgba(240,192,64,0.25);
       border-radius: 999px;
       padding: 1px 7px;
       min-width: 22px;
@@ -493,8 +523,8 @@
     .playlist-export-btn {
       height: 28px;
       padding: 0 12px;
-      border: 1px solid rgba(200,241,53,0.28);
-      background: rgba(200,241,53,0.08);
+      border: 1px solid rgba(240,192,64,0.28);
+      background: rgba(240,192,64,0.08);
       color: var(--accent);
       border-radius: 7px;
       font-family: inherit;
@@ -503,7 +533,7 @@
       cursor: pointer;
       transition: background var(--t), border-color var(--t);
     }
-    .playlist-export-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.5); }
+    .playlist-export-btn:hover { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.5); }
     .playlist-export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .pl-rb-btn {
       border-color: rgba(125,211,252,0.28);
@@ -728,13 +758,13 @@
       border-radius: 50%;
       background: var(--accent);
       border: 2px solid rgba(9,9,9,0.6);
-      box-shadow: 0 0 0 0 rgba(200,241,53,0.4);
+      box-shadow: 0 0 0 0 rgba(240,192,64,0.4);
       transition: box-shadow var(--t), transform var(--t);
       cursor: grab;
     }
     input[type="range"]::-webkit-slider-thumb:active {
       cursor: grabbing;
-      box-shadow: 0 0 0 5px rgba(200,241,53,0.18);
+      box-shadow: 0 0 0 5px rgba(240,192,64,0.18);
       transform: scale(1.15);
     }
     #progressBar { min-width: 120px; }
@@ -800,7 +830,7 @@
       display: flex; align-items: center; gap: 12px;
       padding: 10px 20px;
       background: rgba(18,26,6,0.98);
-      border-bottom: 1px solid rgba(200,241,53,0.35);
+      border-bottom: 1px solid rgba(240,192,64,0.35);
       backdrop-filter: blur(16px);
       box-shadow: 0 4px 24px rgba(0,0,0,0.5);
       transform: translateY(-100%);
@@ -818,15 +848,15 @@
     .update-banner-text { font-size: 13px; font-weight: 600; color: var(--text); min-width: 0; }
     .update-banner-text span { color: var(--accent); }
     .update-banner-sub { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 400; }
-    .update-banner-progress { width: 100%; height: 2px; background: rgba(200,241,53,0.1); border-radius: 999px; overflow: hidden; margin-top: 5px; }
+    .update-banner-progress { width: 100%; height: 2px; background: rgba(240,192,64,0.1); border-radius: 999px; overflow: hidden; margin-top: 5px; }
     .update-banner-progress-fill { height: 100%; background: var(--accent); border-radius: 999px; width: 0%; transition: width 0.3s linear; }
     .update-install-btn {
       height: 28px; padding: 0 14px;
-      border: 1px solid rgba(200,241,53,0.4); background: rgba(200,241,53,0.1); color: var(--accent);
+      border: 1px solid rgba(240,192,64,0.4); background: rgba(240,192,64,0.1); color: var(--accent);
       border-radius: 7px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
       transition: background var(--t);
     }
-    .update-install-btn:hover { background: rgba(200,241,53,0.2); }
+    .update-install-btn:hover { background: rgba(240,192,64,0.2); }
     .update-dismiss-btn {
       height: 28px; padding: 0 12px;
       border: 1px solid var(--border); background: transparent; color: var(--muted);
@@ -841,7 +871,7 @@
       display: flex; align-items: center; gap: 12px;
       padding: 10px 20px;
       background: rgba(12,12,12,0.98);
-      border-bottom: 1px solid rgba(200,241,53,0.22);
+      border-bottom: 1px solid rgba(240,192,64,0.22);
       backdrop-filter: blur(16px);
       box-shadow: 0 4px 24px rgba(0,0,0,0.4);
       transform: translateY(-100%);
@@ -855,11 +885,11 @@
     .drive-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
     .drive-banner-load {
       height: 28px; padding: 0 14px;
-      border: 1px solid rgba(200,241,53,0.35); background: rgba(200,241,53,0.1); color: var(--accent);
+      border: 1px solid rgba(240,192,64,0.35); background: rgba(240,192,64,0.1); color: var(--accent);
       border-radius: 7px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
       transition: background var(--t);
     }
-    .drive-banner-load:hover { background: rgba(200,241,53,0.2); }
+    .drive-banner-load:hover { background: rgba(240,192,64,0.2); }
     .drive-banner-dismiss {
       height: 28px; padding: 0 11px;
       border: 1px solid var(--border); background: transparent; color: var(--muted);
@@ -867,7 +897,7 @@
       transition: color var(--t);
     }
     .drive-banner-dismiss:hover { color: var(--text); }
-    .drive-banner-progress { width: 100%; height: 2px; background: rgba(200,241,53,0.1); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+    .drive-banner-progress { width: 100%; height: 2px; background: rgba(240,192,64,0.1); border-radius: 999px; overflow: hidden; margin-top: 4px; }
     .drive-banner-progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 10s linear; width: 100%; }
 
     /* ── View tabs ─────────────────────────────────────────────────────────── */
@@ -890,9 +920,129 @@
     .btn-tab:hover { color: var(--text-2); background: var(--surface-2); }
     .btn-tab.active {
       background: var(--accent-dim);
-      border-color: rgba(200,241,53,0.28);
+      border-color: rgba(240,192,64,0.28);
       color: var(--accent);
     }
+    .raw-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: rgba(168,216,238,0.15);
+      border: 1px solid rgba(168,216,238,0.3);
+      color: #a8d8ee;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .btn-tab.raw-active {
+      background: rgba(168,216,238,0.08);
+      border-color: rgba(168,216,238,0.28);
+      color: #a8d8ee;
+    }
+    .bangers-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: rgba(240,192,64,0.15);
+      border: 1px solid rgba(240,192,64,0.35);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 3px;
+      vertical-align: middle;
+    }
+    .btn-tab.bangers-active {
+      background: rgba(240,192,64,0.10);
+      border-color: rgba(240,192,64,0.30);
+      color: var(--accent);
+    }
+    /* ⚡ banger button in track rows */
+    .banger-row-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      border: 1px solid rgba(240,192,64,0.22);
+      background: rgba(240,192,64,0.07);
+      color: var(--accent);
+      transition: background var(--t), border-color var(--t);
+    }
+    .banger-row-btn:hover { background: rgba(240,192,64,0.20); border-color: rgba(240,192,64,0.5); }
+    .banger-row-btn.is-banger {
+      background: rgba(240,192,64,0.22);
+      border-color: rgba(240,192,64,0.6);
+      color: var(--accent);
+    }
+    tbody tr:hover .banger-row-btn { display: inline-flex; }
+    /* ⚡ indicator chip on library rows that are in bangers */
+    .banger-indicator {
+      display: inline-block;
+      font-size: 10px;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+    /* Bangers section */
+    #bangersSection {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .bangers-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px 8px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .bangers-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .bangers-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .bangers-empty-icon { font-size: 40px; opacity: 0.4; }
+    .bangers-remove-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: color var(--t), border-color var(--t), background var(--t);
+    }
+    .bangers-remove-btn:hover { color: var(--red); border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.08); }
 
     /* ── Sets view ─────────────────────────────────────────────────────────── */
     .sets-empty {
@@ -960,9 +1110,47 @@
       white-space: nowrap;
       transition: color var(--t), background var(--t), border-color var(--t);
     }
-    .tag-set-btn:hover { color: var(--accent); border-color: rgba(200,241,53,0.3); background: var(--accent-dim); }
+    .tag-set-btn:hover { color: var(--accent); border-color: rgba(240,192,64,0.3); background: var(--accent-dim); }
     .match-history-btn:hover { color: var(--text-2); border-color: var(--border-2); background: var(--surface-3); }
     td.action-cell { width: 1%; white-space: nowrap; padding: 0 14px; }
+
+    /* ── History session groups ───────────────────────────────────────────── */
+    .history-date-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 1;
+    }
+    .history-date-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .history-date-count {
+      font-size: 11px; color: var(--muted-2);
+    }
+    .history-copy-btn {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 5px;
+      height: 24px; padding: 0 10px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); border-radius: 6px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      transition: color var(--t), border-color var(--t), background var(--t);
+    }
+    .history-copy-btn:hover { color: var(--accent); border-color: rgba(240,192,64,0.3); background: var(--accent-dim); }
+    .history-copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+    .history-session-row { background: transparent; }
+    .history-session-id {
+      font-size: 10px; font-family: 'SF Mono','Fira Code',monospace;
+      color: var(--muted-2); white-space: nowrap;
+    }
+
+    /* ── Sets date column ─────────────────────────────────────────────────── */
+    .set-date { font-size: 11px; color: var(--muted-2); white-space: nowrap; }
+    .set-duration-big { font-size: 13px; font-weight: 600; color: var(--text-2); }
 
     /* ── Scanning indicator ────────────────────────────────────────────────── */
     .scanning-indicator {
@@ -1094,7 +1282,7 @@
       transition: border-color var(--t), box-shadow var(--t);
     }
     .modal-field input[type="date"] { color-scheme: dark; }
-    .modal-field input:focus { border-color: rgba(200,241,53,0.45); box-shadow: 0 0 0 3px rgba(200,241,53,0.07); }
+    .modal-field input:focus { border-color: rgba(240,192,64,0.45); box-shadow: 0 0 0 3px rgba(240,192,64,0.07); }
     .modal-field input:disabled { opacity: 0.4; cursor: not-allowed; }
     .modal-field input[readonly] { background: var(--surface); border-color: transparent; color: var(--muted); cursor: default; }
     .modal-format-note {
@@ -1137,23 +1325,23 @@
       border-radius: 6px; font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
       transition: color var(--t), border-color var(--t);
     }
-    .dest-choose-btn:hover { color: var(--accent); border-color: rgba(200,241,53,0.3); }
+    .dest-choose-btn:hover { color: var(--accent); border-color: rgba(240,192,64,0.3); }
     .export-progress-wrap { display: flex; flex-direction: column; gap: 5px; }
 
     /* ── Browse button + sidebar ───────────────────────────────────────────── */
     .btn-browse {
-      color: #6ee7b7;
-      border-color: rgba(110,231,183,0.28);
-      background: rgba(110,231,183,0.07);
+      color: #a8d8ee;
+      border-color: rgba(168,216,238,0.28);
+      background: rgba(168,216,238,0.07);
       font-weight: 700;
     }
     .btn-browse:hover {
-      background: rgba(110,231,183,0.14);
-      border-color: rgba(110,231,183,0.5);
+      background: rgba(168,216,238,0.14);
+      border-color: rgba(168,216,238,0.5);
     }
     .btn-browse.active {
-      background: rgba(110,231,183,0.16);
-      border-color: rgba(110,231,183,0.55);
+      background: rgba(168,216,238,0.16);
+      border-color: rgba(168,216,238,0.55);
     }
 
     .browse-sidebar {
@@ -1230,7 +1418,7 @@
       font-family: inherit;
     }
     .browse-row:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-    .browse-row.active-folder { background: rgba(110,231,183,0.09); color: #6ee7b7; }
+    .browse-row.active-folder { background: rgba(168,216,238,0.09); color: #a8d8ee; }
 
     .browse-arrow {
       width: 14px; height: 14px;
@@ -1279,21 +1467,21 @@
     /* ── M8 button ─────────────────────────────────────────────────────────── */
     .btn-m8 {
       color: var(--accent);
-      border-color: rgba(200,241,53,0.30);
-      background: rgba(200,241,53,0.07);
+      border-color: rgba(240,192,64,0.30);
+      background: rgba(240,192,64,0.07);
       font-weight: 700;
       letter-spacing: 0.02em;
     }
     .btn-m8:hover {
       color: var(--accent);
-      background: rgba(200,241,53,0.14);
-      border-color: rgba(200,241,53,0.50);
-      box-shadow: 0 0 16px rgba(200,241,53,0.12);
+      background: rgba(240,192,64,0.14);
+      border-color: rgba(240,192,64,0.50);
+      box-shadow: 0 0 16px rgba(240,192,64,0.12);
     }
     .btn-m8.active {
-      background: rgba(200,241,53,0.16);
-      border-color: rgba(200,241,53,0.55);
-      box-shadow: 0 0 20px rgba(200,241,53,0.15);
+      background: rgba(240,192,64,0.16);
+      border-color: rgba(240,192,64,0.55);
+      box-shadow: 0 0 20px rgba(240,192,64,0.15);
     }
 
     /* ── M8 side panel ─────────────────────────────────────────────────────── */
@@ -1387,7 +1575,7 @@
       flex-shrink: 0;
     }
     .m8-dot-key   { background: #7dd3fc; box-shadow: 0 0 5px rgba(125,211,252,0.5); }
-    .m8-dot-bpm   { background: var(--accent); box-shadow: 0 0 5px rgba(200,241,53,0.4); }
+    .m8-dot-bpm   { background: var(--accent); box-shadow: 0 0 5px rgba(240,192,64,0.4); }
     .m8-dot-genre { background: #c4b5fd; box-shadow: 0 0 5px rgba(196,181,253,0.5); }
 
     .m8-results {
@@ -1408,6 +1596,31 @@
       gap: 6px;
     }
     .m8-empty svg { opacity: 0.25; margin-bottom: 4px; }
+    .m8-key-debug { font-size: 10px; opacity: 0.45; margin-top: 8px; font-family: monospace; }
+    .m8-debug-block {
+      margin: 12px 8px 4px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-family: monospace;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .m8-debug-block summary {
+      cursor: pointer;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      user-select: none;
+      margin-bottom: 4px;
+    }
+    .m8-debug-block summary:hover { opacity: 0.8; }
+    .m8-debug-row { display: flex; gap: 6px; }
+    .m8-debug-label { opacity: 0.55; min-width: 140px; flex-shrink: 0; }
+    .m8-debug-val { color: var(--fg); word-break: break-all; }
 
     .m8-result-item {
       display: flex;
@@ -1418,7 +1631,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.03);
       transition: background var(--t);
     }
-    .m8-result-item:hover { background: rgba(200,241,53,0.04); }
+    .m8-result-item:hover { background: rgba(240,192,64,0.04); }
     .m8-result-item:last-child { border-bottom: none; }
 
     .m8-art {
@@ -1475,8 +1688,8 @@
       color: #7dd3fc;
     }
     .m8-tag-bpm {
-      background: rgba(200,241,53,0.09);
-      border: 1px solid rgba(200,241,53,0.22);
+      background: rgba(240,192,64,0.09);
+      border: 1px solid rgba(240,192,64,0.22);
       color: var(--accent);
     }
     .m8-tag-genre {
@@ -1501,14 +1714,14 @@
       border-radius: 50%;
       background: var(--border-2);
     }
-    .m8-pip.on { background: var(--accent); box-shadow: 0 0 4px rgba(200,241,53,0.5); }
+    .m8-pip.on { background: var(--accent); box-shadow: 0 0 4px rgba(240,192,64,0.5); }
 
     /* ── Player bar queue button ───────────────────────────────────────────── */
     .player-add-queue-btn {
       flex-shrink: 0;
       width: 30px; height: 30px;
       display: flex; align-items: center; justify-content: center;
-      border: 1.5px solid rgba(200,241,53,0.30);
+      border: 1.5px solid rgba(240,192,64,0.30);
       background: transparent;
       color: var(--accent);
       border-radius: 8px;
@@ -1516,21 +1729,21 @@
       transition: background var(--t), border-color var(--t), box-shadow var(--t);
     }
     .player-add-queue-btn:hover {
-      background: rgba(200,241,53,0.12);
-      border-color: rgba(200,241,53,0.55);
+      background: rgba(240,192,64,0.12);
+      border-color: rgba(240,192,64,0.55);
     }
     .player-add-queue-btn.in-queue {
-      background: rgba(200,241,53,0.22);
-      border-color: rgba(200,241,53,0.65);
-      box-shadow: 0 0 10px rgba(200,241,53,0.18);
+      background: rgba(240,192,64,0.22);
+      border-color: rgba(240,192,64,0.65);
+      box-shadow: 0 0 10px rgba(240,192,64,0.18);
     }
 
     .m8-add-btn {
       flex-shrink: 0;
       width: 24px; height: 24px;
       display: flex; align-items: center; justify-content: center;
-      border: 1px solid rgba(200,241,53,0.22);
-      background: rgba(200,241,53,0.07);
+      border: 1px solid rgba(240,192,64,0.22);
+      background: rgba(240,192,64,0.07);
       color: var(--accent);
       border-radius: 6px;
       font-size: 15px;
@@ -1539,11 +1752,11 @@
       transition: background var(--t), border-color var(--t);
       margin-left: 6px;
     }
-    .m8-add-btn:hover { background: rgba(200,241,53,0.16); border-color: rgba(200,241,53,0.45); }
+    .m8-add-btn:hover { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.45); }
     .m8-add-btn.in-queue {
-      background: rgba(200,241,53,0.20);
-      border-color: rgba(200,241,53,0.55);
-      box-shadow: 0 0 8px rgba(200,241,53,0.15);
+      background: rgba(240,192,64,0.20);
+      border-color: rgba(240,192,64,0.55);
+      box-shadow: 0 0 8px rgba(240,192,64,0.15);
     }
 
     .m8-section-label {
@@ -1578,12 +1791,12 @@
       cursor: pointer;
       transition: border-color var(--t);
     }
-    .mh-session-select:focus { border-color: rgba(200,241,53,0.4); }
+    .mh-session-select:focus { border-color: rgba(240,192,64,0.4); }
     .mh-badge {
       font-size: 10px;
-      background: rgba(200,241,53,0.1);
+      background: rgba(240,192,64,0.1);
       color: var(--accent);
-      border: 1px solid rgba(200,241,53,0.28);
+      border: 1px solid rgba(240,192,64,0.28);
       border-radius: 999px;
       padding: 2px 9px;
       white-space: nowrap;
@@ -1610,7 +1823,7 @@
     .mh-table th:first-child, .mh-table td:first-child { width: 44px; text-align: right; color: var(--muted); padding-right: 8px; }
     .mh-table td { padding: 0 16px; height: 38px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12.5px; }
     .mh-table tbody tr:last-child td { border-bottom: none; }
-    .mh-table tbody tr:hover { background: rgba(200,241,53,0.035); }
+    .mh-table tbody tr:hover { background: rgba(240,192,64,0.035); }
     .mh-table td.muted { color: var(--muted); }
     .mh-table td.bpm { white-space: nowrap; font-variant-numeric: tabular-nums; }
     /* ── Ambient Mode ──────────────────────────────────────────────────────── */
@@ -1674,38 +1887,22 @@
     .ambient-m13-logo {
       font-size: 18px;
       font-weight: 900;
-      color: rgba(200,241,53,0.18);
+      color: rgba(240,192,64,0.18);
       letter-spacing: -0.05em;
       user-select: none;
     }
     .ambient-clock-wrap {
-      position: relative;
-      display: inline-block;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 8px 18px 10px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1; /* behind z-index:2 content */
       user-select: none;
     }
-    .ambient-clock-ghost,
-    .ambient-clock-live {
-      font-family: 'Share Tech Mono', 'SF Mono', monospace;
-      font-size: 48px;
-      font-weight: 400;
-      letter-spacing: 0.08em;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-    }
-    .ambient-clock-ghost {
-      color: rgba(200,241,53,0.10);
+    #ambientClockCanvas {
       display: block;
-    }
-    .ambient-clock-live {
-      position: absolute;
-      inset: 8px 18px 10px;
-      display: flex;
-      align-items: center;
-      color: rgba(200,241,53,0.72);
+      opacity: 0.45;
     }
 
     /* Center content */
@@ -1723,7 +1920,7 @@
     .ambient-idle-logo {
       font-size: 72px;
       font-weight: 900;
-      color: rgba(200,241,53,0.12);
+      color: rgba(240,192,64,0.12);
       letter-spacing: -0.06em;
       user-select: none;
       animation: ambient-breathe 4s ease-in-out infinite;
@@ -1746,7 +1943,7 @@
       position: absolute;
       inset: -40px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(200,241,53,0.18) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(240,192,64,0.18) 0%, transparent 65%);
       animation: ambient-glow 3.5s ease-in-out infinite;
       z-index: -1;
     }
@@ -1759,6 +1956,7 @@
       object-fit: cover;
       border-radius: 18px;
       display: block;
+      opacity: 0.72;
     }
     .ambient-artwork-placeholder {
       width: 100%; height: 100%;
@@ -1803,7 +2001,7 @@
       text-align: center;
     }
     .ambient-track-meta .sep { margin: 0 10px; opacity: 0.4; }
-    .ambient-track-meta .accent { color: rgba(200,241,53,0.6); font-weight: 600; }
+    .ambient-track-meta .accent { color: rgba(240,192,64,0.6); font-weight: 600; }
 
     /* Visualiser canvas */
     .ambient-viz-wrap {
@@ -1910,12 +2108,12 @@
       width: 52px; height: 52px;
       background: var(--accent);
       color: #000;
-      box-shadow: 0 0 0 0 rgba(200,241,53,0.3);
+      box-shadow: 0 0 0 0 rgba(240,192,64,0.3);
       transition: color var(--t), background var(--t), transform 80ms ease, box-shadow 200ms ease;
     }
     .ambient-ctrl-btn.lg:hover {
       background: #d9ff4a;
-      box-shadow: 0 0 0 8px rgba(200,241,53,0.18);
+      box-shadow: 0 0 0 8px rgba(240,192,64,0.18);
     }
 
     /* Volume row */
@@ -1948,7 +2146,7 @@
     }
     .ambient-progress-fill {
       height: 100%;
-      background: rgba(200,241,53,0.55);
+      background: rgba(240,192,64,0.55);
       transition: width 0.25s linear;
       border-radius: 0 2px 2px 0;
     }
@@ -1973,7 +2171,7 @@
     .lib-view-btn.active {
       background: var(--surface-3);
       color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(200,241,53,0.18);
+      box-shadow: 0 0 0 1px rgba(240,192,64,0.18);
     }
 
     /* ── Library breadcrumb ────────────────────────────────────────────────── */
@@ -2122,7 +2320,7 @@
       transition: background var(--t);
     }
     .detail-track-row:hover { background: var(--surface-2); }
-    .detail-track-row.active { background: rgba(200,241,53,0.07); }
+    .detail-track-row.active { background: rgba(240,192,64,0.07); }
     .detail-track-num { width: 22px; text-align: right; font-size: 12px; color: var(--muted); flex-shrink: 0; }
     .detail-track-art {
       width: 36px; height: 36px; border-radius: 4px;
@@ -2176,12 +2374,266 @@
   </div>
   <div class="app-shell">
     <header>
-      <div class="brand"><span class="brand-badge"></span><div><h1>M13</h1><p>DJ library & discovery</p></div></div>
+      <div class="brand" id="brandHome" style="cursor:pointer" title="Go to library">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="120" style="display:block;flex-shrink:0">
+
+
+<defs>
+  <radialGradient id="moonGrad-hdr" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlow-hdr" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.15"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="0.65"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="0.15"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.25">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — white highlighted, launch date marker -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.38">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary — deepest ice #7ab0d0 -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.5"/>
+
+<!-- Night sky stars — dim gold -->
+<g fill="#c89820" fill-opacity="0.3">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+
+<!-- Mid stars — warm gold -->
+<g fill="#ffd060" fill-opacity="0.45">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+
+<!-- Bright warm stars -->
+<g fill="#ffe8a0" fill-opacity="0.65">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+
+<!-- Brightest white stars -->
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+
+<!-- Star sparkles -->
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.4" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- Golden M — left/right verticals bright gold, diagonals darker gold -->
+<line x1="292" y1="378" x2="292" y2="305" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="378" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
+<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.08"/>
+
+<!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
+<!-- Outer atmosphere glow -->
+<circle cx="210" cy="375" r="20" fill="url(#moonGlow-hdr)"/>
+<!-- Moon sphere with realistic radial gradient shading -->
+<circle cx="210" cy="375" r="12" fill="url(#moonGrad-hdr)"/>
+<!-- Mare — dark surface patches -->
+<ellipse cx="207" cy="370" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.35" transform="rotate(-20,207,370)"/>
+<ellipse cx="213" cy="374" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.28" transform="rotate(15,213,374)"/>
+<ellipse cx="206" cy="378" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.22" transform="rotate(-10,206,378)"/>
+<ellipse cx="215" cy="369" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.2"/>
+<ellipse cx="209" cy="381" rx="1.8" ry="1.2" fill="#8a7a50" fill-opacity="0.18" transform="rotate(25,209,381)"/>
+<!-- Crater rings -->
+<circle cx="204" cy="372" r="1.2" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.3"/>
+<circle cx="214" cy="377" r="0.9" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.25"/>
+<circle cx="208" cy="380" r="0.7" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.2"/>
+<!-- Moon edge -->
+<circle cx="210" cy="375" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.3"/>
+<!-- Warm gold aura -->
+<circle cx="210" cy="375" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.08" stroke-width="2"/>
+
+</svg>
+      </div>
       <button id="openLibraryBtn" class="btn btn-primary" type="button">Open Library</button>
     </header>
     <section class="toolbar">
       <div class="view-tabs">
         <button id="libraryTabBtn" class="btn-tab active" type="button">Library</button>
+        <button id="rawTabBtn" class="btn-tab" type="button">Raw <span id="rawBadge" class="raw-badge" hidden></span></button>
+        <button id="bangersTabBtn" class="btn-tab" type="button">⚡ Bangers <span id="bangersBadge" class="bangers-badge" hidden></span></button>
         <button id="setsTabBtn" class="btn-tab" type="button">Sets</button>
         <button id="historyTabBtn" class="btn-tab" type="button">History</button>
       </div>
@@ -2206,15 +2658,260 @@
         <span id="plBadge" class="pl-badge">0</span>
       </button>
       <button id="refreshBtn" class="btn" type="button">Refresh</button>
-      <button id="m8Btn" class="btn btn-m8" type="button" title="Find similar tracks (harmonic + BPM + genre)">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.3"/><circle cx="6.5" cy="6.5" r="2" fill="currentColor"/><line x1="6.5" y1="1" x2="6.5" y2="3.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="6.5" y1="9.8" x2="6.5" y2="12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="1" y1="6.5" x2="3.2" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="9.8" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        M8
+      <button id="m8Btn" class="btn btn-m8" type="button" title="Find similar tracks (harmonic + BPM + genre)" style="padding:6px 8px">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="44" style="display:block">
+
+
+<defs>
+  <radialGradient id="moonGradM8-tb" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlowM8-tb" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.35"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="1.0"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.6">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI — WHITE HIGHLIGHTED — moon is here, M8 launch date -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — dimmed, this was M13 launch -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.85">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.9"/>
+
+<!-- Stars — warm gold tones -->
+<g fill="#c89820" fill-opacity="0.65">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+<g fill="#ffd060" fill-opacity="0.8">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+<g fill="#ffe8a0" fill-opacity="0.9">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.85" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- The 8 — M mirrored horizontally -->
+<!-- Top diagonals pointing to centre — bright gold -->
+<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Bottom diagonals pointing to centre — bright gold -->
+<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Left and right verticals — darker gold -->
+<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
+<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.22"/>
+
+<!-- Full Moon at 2 degrees Gemini — Vedic sidereal — November 24 2026
+     Gemini at 60 degrees on wheel, 2 degrees in = 62 degrees from top
+     Placing at radius 175 within star field
+     x = 340 + 175*sin(62deg) = 340 + 154.5 = 494
+     y = 340 - 175*cos(62deg) = 340 - 82 = 258 -->
+<circle cx="494" cy="258" r="18" fill="url(#moonGlowM8-tb)"/>
+<circle cx="494" cy="258" r="12" fill="url(#moonGradM8-tb)"/>
+<ellipse cx="491" cy="253" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.55" transform="rotate(-20,491,253)"/>
+<ellipse cx="497" cy="257" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.5" transform="rotate(15,497,257)"/>
+<ellipse cx="490" cy="261" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.42" transform="rotate(-10,490,261)"/>
+<ellipse cx="498" cy="252" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.4"/>
+<circle cx="494" cy="258" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.65"/>
+<circle cx="494" cy="258" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.22" stroke-width="2"/>
+
+</svg>
       </button>
       <button id="rekordboxBtn" class="btn" type="button">📀 Rekordbox</button>
       <button id="exportCatalogueBtn" class="btn" type="button">Export Catalogue</button>
       <span id="exportCatalogueMsg" class="catalogue-msg" hidden></span>
       <button id="copyFolderBtn" class="btn" type="button">Copy Folder</button>
-      <label class="search-box" for="searchInput"><span>🔎</span><input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre, folder…" /></label>
+      <label class="search-box" for="searchInput">
+        <span>🔎</span>
+        <input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre, folder… (⌘F)" autocomplete="off" />
+        <span id="searchCount" class="search-count" hidden></span>
+        <button id="searchClearBtn" class="search-clear" type="button" hidden aria-label="Clear search">✕</button>
+      </label>
     </section>
 
     <!-- Library breadcrumb (album / artist drill-down) -->
@@ -2317,6 +3014,28 @@
         </div>
       </section>
 
+      <!-- Bangers view -->
+      <section id="bangersSection" hidden>
+        <div class="bangers-header">
+          <span class="bangers-title">⚡ Bangers</span>
+          <span id="bangersCountLabel" style="color:var(--muted);font-size:12px"></span>
+        </div>
+        <div id="bangersEmpty" class="bangers-empty" hidden>
+          <div class="bangers-empty-icon">⚡</div>
+          <div>No bangers yet.<br>Click ⚡ on any track to save it here.</div>
+        </div>
+        <div id="bangersTableWrap" class="table-wrap" hidden>
+          <table>
+            <thead><tr>
+              <th class="art-cell"></th>
+              <th>Track</th><th>Artist</th><th>BPM</th><th>Key</th>
+              <th>Genre</th><th>Format</th><th>Size</th><th class="copy-cell"></th>
+            </tr></thead>
+            <tbody id="bangersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- History view -->
       <section id="historySection" class="panel" hidden>
         <div id="historyEmptyState" class="empty-state" hidden>
@@ -2330,11 +3049,10 @@
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Session</th>
+                <th style="width:32px">#</th>
                 <th>Track</th>
                 <th>Artist</th>
-                <th>BPM</th>
+                <th style="width:56px">BPM</th>
               </tr>
             </thead>
             <tbody id="historyTableBody"></tbody>
@@ -2358,9 +3076,10 @@
           <table>
             <thead>
               <tr>
-                <th>Filename</th>
-                <th>Duration</th>
-                <th>Size</th>
+                <th>Recording</th>
+                <th style="width:100px">Duration</th>
+                <th style="width:80px">Date</th>
+                <th style="width:72px">Size</th>
                 <th class="action-cell"></th>
               </tr>
             </thead>
@@ -2400,6 +3119,8 @@
       <button id="playerAddToQueueBtn" class="player-add-queue-btn" type="button" title="Add to queue">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
+      <!-- banger -->
+      <button id="playerBangerBtn" class="player-add-queue-btn" type="button" title="Add to Bangers" style="font-size:14px;line-height:1">⚡</button>
       <!-- progress + volume -->
       <div class="player-controls">
         <div class="player-progress">
@@ -2569,10 +3290,11 @@
 
       <div class="ambient-top">
         <div class="ambient-m13-logo">M13</div>
-        <div class="ambient-clock-wrap">
-          <span class="ambient-clock-ghost">88:88:88</span>
-          <span class="ambient-clock-live" id="ambientClock">00:00:00</span>
-        </div>
+      </div>
+
+      <!-- Clock as centred background watermark -->
+      <div class="ambient-clock-wrap">
+        <canvas id="ambientClockCanvas" width="800" height="800"></canvas>
       </div>
 
       <div class="ambient-center" id="ambientCenter">
@@ -2586,9 +3308,9 @@
             <div class="ambient-artwork-wrap" id="ambientArtworkWrap">
               <div class="ambient-artwork-placeholder">
                 <svg class="ambient-disc" id="ambientDisc" width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="36" stroke="rgba(200,241,53,0.3)" stroke-width="1.5"/>
-                  <circle cx="40" cy="40" r="22" stroke="rgba(200,241,53,0.15)" stroke-width="1"/>
-                  <circle cx="40" cy="40" r="6"  fill="rgba(200,241,53,0.2)"/>
+                  <circle cx="40" cy="40" r="36" stroke="rgba(240,192,64,0.3)" stroke-width="1.5"/>
+                  <circle cx="40" cy="40" r="22" stroke="rgba(240,192,64,0.15)" stroke-width="1"/>
+                  <circle cx="40" cy="40" r="6"  fill="rgba(240,192,64,0.2)"/>
                 </svg>
               </div>
             </div>
@@ -2684,8 +3406,248 @@
       <div class="m8-panel-header">
         <div class="m8-panel-title-row">
           <div class="m8-logo">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--accent)" stroke-width="1.4"/><circle cx="8" cy="8" r="2.4" fill="var(--accent)"/><line x1="8" y1="1.5" x2="8" y2="4" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="12" x2="8" y2="14.5" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/><line x1="1.5" y1="8" x2="4" y2="8" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="8" x2="14.5" y2="8" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <span class="m8-wordmark">M8</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="40" style="display:block;flex-shrink:0">
+
+
+<defs>
+  <radialGradient id="moonGradM8-ph" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlowM8-ph" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.35"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="1.0"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.6">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI — WHITE HIGHLIGHTED — moon is here, M8 launch date -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — dimmed, this was M13 launch -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.85">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.9"/>
+
+<!-- Stars — warm gold tones -->
+<g fill="#c89820" fill-opacity="0.65">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+<g fill="#ffd060" fill-opacity="0.8">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+<g fill="#ffe8a0" fill-opacity="0.9">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.85" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- The 8 — M mirrored horizontally -->
+<!-- Top diagonals pointing to centre — bright gold -->
+<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Bottom diagonals pointing to centre — bright gold -->
+<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Left and right verticals — darker gold -->
+<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
+<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.22"/>
+
+<!-- Full Moon at 2 degrees Gemini — Vedic sidereal — November 24 2026
+     Gemini at 60 degrees on wheel, 2 degrees in = 62 degrees from top
+     Placing at radius 175 within star field
+     x = 340 + 175*sin(62deg) = 340 + 154.5 = 494
+     y = 340 - 175*cos(62deg) = 340 - 82 = 258 -->
+<circle cx="494" cy="258" r="18" fill="url(#moonGlowM8-ph)"/>
+<circle cx="494" cy="258" r="12" fill="url(#moonGradM8-ph)"/>
+<ellipse cx="491" cy="253" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.55" transform="rotate(-20,491,253)"/>
+<ellipse cx="497" cy="257" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.5" transform="rotate(15,497,257)"/>
+<ellipse cx="490" cy="261" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.42" transform="rotate(-10,490,261)"/>
+<ellipse cx="498" cy="252" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.4"/>
+<circle cx="494" cy="258" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.65"/>
+<circle cx="494" cy="258" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.22" stroke-width="2"/>
+
+</svg>
             <span class="m8-beta">Beta</span>
           </div>
           <button id="m8CloseBtn" class="m8-close" type="button" aria-label="Close">
@@ -2728,6 +3690,60 @@
   <script>
     const trackTableBody = document.getElementById('trackTableBody');
     const tableWrap = document.getElementById('tableWrap');
+
+    // ── Resizable columns ─────────────────────────────────────────────────────
+    (function initResizableCols() {
+      const table = trackTableBody.closest('table');
+      const ths   = [...table.querySelectorAll('thead th')];
+      const STORE_KEY = 'm13-col-widths';
+
+      // Restore saved widths
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+        ths.forEach((th, i) => {
+          if (saved[i]) { th.style.width = saved[i] + 'px'; th.style.minWidth = saved[i] + 'px'; }
+        });
+      } catch (_) {}
+
+      function saveWidths() {
+        const widths = {};
+        ths.forEach((th, i) => { widths[i] = th.offsetWidth; });
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(widths)); } catch (_) {}
+      }
+
+      ths.forEach((th, idx) => {
+        // Skip art and action cols (first and last)
+        if (idx === 0 || idx === ths.length - 1) return;
+        th.style.position = 'relative';
+        const handle = document.createElement('span');
+        handle.className = 'col-resize-handle';
+        th.appendChild(handle);
+
+        let startX, startW;
+        handle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          startX = e.clientX;
+          startW = th.offsetWidth;
+          handle.classList.add('dragging');
+          document.body.style.cursor = 'col-resize';
+
+          function onMove(ev) {
+            const w = Math.max(60, startW + ev.clientX - startX);
+            th.style.width = w + 'px';
+            th.style.minWidth = w + 'px';
+          }
+          function onUp() {
+            handle.classList.remove('dragging');
+            document.body.style.cursor = '';
+            saveWidths();
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          }
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
+      });
+    })();
     const emptyState = document.getElementById('emptyState');
     const searchInput = document.getElementById('searchInput');
     const trackCount = document.getElementById('trackCount');
@@ -2754,23 +3770,28 @@
     }
     let artObserver = null;
     function observeArtCells() {
-      if (artObserver) artObserver.disconnect();
-      artObserver = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const cell = entry.target;
-          const filePath = cell.dataset.artPath;
-          if (!filePath || cell.dataset.artLoaded) continue;
-          cell.dataset.artLoaded = '1';
-          artObserver.unobserve(cell);
-          fetchArtwork(filePath).then((url) => {
-            if (url) {
-              cell.innerHTML = `<img class="track-art" src="${url}" alt="" />`;
-            }
-          });
-        }
-      }, { rootMargin: '120px' });
-      document.querySelectorAll('.art-cell[data-art-path]').forEach((el) => artObserver.observe(el));
+      if (!artObserver) {
+        artObserver = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const cell = entry.target;
+            const filePath = cell.dataset.artPath;
+            if (!filePath || cell.dataset.artLoaded) continue;
+            cell.dataset.artLoaded = '1';
+            artObserver.unobserve(cell);
+            fetchArtwork(filePath).then((url) => {
+              if (url && cell.isConnected) {
+                // Replace only the placeholder, never scroll
+                cell.innerHTML = `<img class="track-art" src="${url}" alt="" />`;
+              }
+            });
+          }
+        }, { rootMargin: '200px' });
+      }
+      // Observe only newly-added, unloaded cells
+      document.querySelectorAll('.art-cell[data-art-path]:not([data-art-loaded])').forEach((el) => {
+        artObserver.observe(el);
+      });
     }
     function formatSize(bytes) { if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes} B`; const units=['KB','MB','GB','TB']; let size=bytes/1024; let unitIndex=0; while (size >= 1024 && unitIndex < units.length - 1) { size/=1024; unitIndex += 1; } return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`; }
     function formatTime(seconds) { const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0; const mins = Math.floor(safe / 60); const secs = safe % 60; return `${mins}:${String(secs).padStart(2, '0')}`; }
@@ -2812,9 +3833,61 @@
       return ext === fmt;
     }
 
+    // ── Progressive batch renderer ────────────────────────────────────────────
+    let _renderToken = 0; // increment each call to cancel in-flight batches
+
+    function trackRowHTML(track) {
+      const cachedArt = artworkCache.get(track.path);
+      const artCell = cachedArt
+        ? `<td class="art-cell"><img class="track-art" src="${cachedArt}" alt="" /></td>`
+        : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div></td>`;
+      const folderName = track.folder ? track.folder.split('/').filter(Boolean).pop() : '—';
+      const fmt = track.ext.replace('.', '').toUpperCase();
+      const inBangers = isBanger(track);
+      const bangerIndicator = inBangers ? `<span class="banger-indicator" data-banger-path="${track.path}">⚡</span>` : `<span class="banger-indicator" data-banger-path="${track.path}" hidden>⚡</span>`;
+      const bangerBtn = `<button class="banger-row-btn${inBangers ? ' is-banger' : ''}" data-banger-path="${track.path}" type="button" title="${inBangers ? 'Remove from Bangers' : 'Add to Bangers'}">⚡</button>`;
+      return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}${bangerIndicator}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions">${bangerBtn}<button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to queue">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
+    }
+
+    function renderTracksProgressive(filtered) {
+      const BATCH = 100;
+      const token = ++_renderToken;
+      const wrap = tableWrap;
+      const scrollTop = wrap ? wrap.scrollTop : 0;
+
+      // First batch — synchronous, so rows appear immediately
+      trackTableBody.innerHTML = filtered.slice(0, BATCH).map(trackRowHTML).join('');
+      // Restore scroll position so the view doesn't jump on re-render
+      if (wrap) wrap.scrollTop = scrollTop;
+      observeArtCells();
+
+      if (filtered.length <= BATCH) return;
+
+      let offset = BATCH;
+      function renderNext() {
+        if (token !== _renderToken) return; // superseded
+        const chunk = filtered.slice(offset, offset + BATCH);
+        if (!chunk.length) return;
+        const prevScroll = wrap ? wrap.scrollTop : 0;
+        trackTableBody.insertAdjacentHTML('beforeend', chunk.map(trackRowHTML).join(''));
+        if (wrap) wrap.scrollTop = prevScroll;
+        observeArtCells();
+        offset += BATCH;
+        if (offset < filtered.length) requestAnimationFrame(renderNext);
+      }
+      requestAnimationFrame(renderNext);
+    }
+
     function renderTracks(list) {
       const term = searchInput.value.trim().toLowerCase();
       const filtered = list.filter((track) => {
+        // Raw view: only unanalysed tracks (missing BPM or key)
+        if (currentView === 'raw') {
+          if (track.bpm && track.key) return false;
+        } else if (currentView === 'library' && libView !== 'folders') {
+          // Library view (not folder browse): only fully analysed tracks
+          if (!track.bpm || !track.key) return false;
+        }
         if (!matchesFormat(track, activeFormat)) return false;
         if (!matchesBpmRange(track, activeBpm)) return false;
         if (!term) return true;
@@ -2850,21 +3923,14 @@
           isFiltered ? 'No tracks match your search or filters.' : 'No tracks found in this folder.'
         }</td></tr>`;
       } else {
-        trackTableBody.innerHTML = filtered.map((track) => {
-          const cachedArt = artworkCache.get(track.path);
-          const artCell = cachedArt
-            ? `<td class="art-cell"><img class="track-art" src="${cachedArt}" alt="" /></td>`
-            : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div></td>`;
-          const folderName = track.folder ? track.folder.split('/').filter(Boolean).pop() : '—';
-          const fmt = track.ext.replace('.', '').toUpperCase();
-          return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions"><button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to queue">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
-        }).join('');
+        renderTracksProgressive(filtered);
       }
 
       const totalSize = filtered.reduce((sum, t) => sum + (t.size || 0), 0);
       trackCount.textContent  = String(filtered.length);
       librarySize.textContent = formatSize(totalSize);
       formatCount.textContent = String(new Set(filtered.map(t => t.ext.toLowerCase())).size);
+      if (typeof setSearchCount === 'function') setSearchCount(filtered.length, list.length);
       observeArtCells();
     }
 
@@ -3214,6 +4280,7 @@
       tracks = Array.isArray(scanned) ? scanned : [];
       window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
       currentLibraryFolder = folderPath;
+      updateRawBadge();
       showLibView(libView); // re-render whatever view is active
       await window.m13.saveLastFolder(folderPath);
     }
@@ -3257,6 +4324,7 @@
       currentTrack = track;
       playerBar.hidden = false;
       syncPlayerQueueBtn();
+      if (typeof syncPlayerBangerBtn === 'function') syncPlayerBangerBtn();
       playerTitle.textContent = track.name;
       playerSubtitle.textContent = 'Loading metadata…';
       metadataInfo.textContent = 'Artist • BPM • Genre • Key';
@@ -3293,7 +4361,15 @@
       } catch (error) {
         setPlayState(false);
       }
-      renderTracks(tracks);
+      // Update the playing-row highlight in-place — avoids a full table rebuild
+      // which would destroy the DOM mid-dblclick and corrupt metadata editing.
+      trackTableBody.querySelectorAll('tr.active').forEach(r => r.classList.remove('active'));
+      const activeRow = trackTableBody.querySelector(`tr[data-track-path="${CSS.escape(track.path)}"]`);
+      if (activeRow) activeRow.classList.add('active');
+      // Re-render M8 panel for new track (direct call, not via play event)
+      if (typeof m8Open !== 'undefined' && m8Open && typeof renderM8Panel === 'function') {
+        renderM8Panel(track);
+      }
     }
     function setPlayState(playing) {
       document.getElementById('playIcon').hidden = playing;
@@ -3326,6 +4402,11 @@
     const setsStats      = document.getElementById('setsStats');
     const historyStats   = document.getElementById('historyStats');
     const libraryTabBtn  = document.getElementById('libraryTabBtn');
+    const rawTabBtn      = document.getElementById('rawTabBtn');
+    const rawBadge       = document.getElementById('rawBadge');
+    const bangersTabBtn  = document.getElementById('bangersTabBtn');
+    const bangersBadge   = document.getElementById('bangersBadge');
+    const bangersSection = document.getElementById('bangersSection');
     const setsTabBtn     = document.getElementById('setsTabBtn');
     const historyTabBtn  = document.getElementById('historyTabBtn');
     const setsScanning   = document.getElementById('setsScanning');
@@ -3340,7 +4421,7 @@
     const historyTableWrap  = document.getElementById('historyTableWrap');
     const historyTableBody  = document.getElementById('historyTableBody');
 
-    let currentView = 'library'; // 'library' | 'sets' | 'history'
+    let currentView = 'library'; // 'library' | 'raw' | 'bangers' | 'sets' | 'history'
     let sets = [];
     let setsLoaded = false;
     let historyLoaded = false;
@@ -3349,38 +4430,165 @@
     function switchView(view) {
       currentView = view;
       const isLibrary = view === 'library';
+      const isRaw     = view === 'raw';
+      const isBangers = view === 'bangers';
       const isSets    = view === 'sets';
       const isHistory = view === 'history';
 
       libraryTabBtn.classList.toggle('active', isLibrary);
+      rawTabBtn.classList.toggle('raw-active', isRaw);
+      bangersTabBtn.classList.toggle('bangers-active', isBangers);
       setsTabBtn.classList.toggle('active', isSets);
       historyTabBtn.classList.toggle('active', isHistory);
 
-      librarySection.hidden = !isLibrary;
+      librarySection.hidden = !(isLibrary || isRaw);
+      bangersSection.hidden = !isBangers;
       setsSection.hidden    = !isSets;
       historySection.hidden = !isHistory;
-      libraryStats.hidden   = !isLibrary;
+      libraryStats.hidden   = !(isLibrary || isRaw);
       setsStats.hidden      = !isSets;
       historyStats.hidden   = !isHistory;
 
-      // Show/hide controls that only apply to the library view
-      searchInput.closest('label').style.display = isLibrary ? '' : 'none';
-      libraryFilters.hidden = !isLibrary;
-      document.getElementById('exportCatalogueBtn').hidden = !isLibrary;
-      document.getElementById('copyFolderBtn').hidden = !isLibrary;
-      if (!isLibrary) { const m = document.getElementById('exportCatalogueMsg'); m.hidden = true; m.textContent = ''; }
+      const isLib = isLibrary || isRaw;
+      searchInput.closest('label').style.display = isLib ? '' : 'none';
+      libraryFilters.hidden = !isLib;
+      document.getElementById('exportCatalogueBtn').hidden = !isLib;
+      document.getElementById('copyFolderBtn').hidden = !isLib;
+      if (!isLib) { const m = document.getElementById('exportCatalogueMsg'); m.hidden = true; m.textContent = ''; }
 
       if (isLibrary && tracks.length > 0) showLibView(libView);
+      if (isRaw && tracks.length > 0) { tableWrap.hidden = false; renderTracks(tracks); }
+      if (isBangers) renderBangers();
       if (isLibrary) {
         document.getElementById('libViewToggle').style.display = '';
         libBreadcrumb.classList.toggle('visible', !!(libDrillAlbum || libDrillArtist));
         libraryFilters.hidden = libView !== 'tracks' || !tracks.length;
       } else {
+        document.getElementById('libViewToggle').style.display = 'none';
         libBreadcrumb.classList.remove('visible');
       }
       if (isSets && !setsLoaded) refreshSets();
       if (isHistory && !historyLoaded) refreshHistory();
     }
+
+    function updateRawBadge() {
+      const count = tracks.filter(t => !t.bpm || !t.key).length;
+      rawBadge.textContent = count;
+      rawBadge.hidden = count === 0;
+    }
+
+    // ── Bangers ───────────────────────────────────────────────────────────────
+    let bangers = []; // array of track objects, persisted to ~/M13/bangers.json
+
+    async function loadBangers() {
+      try { bangers = await window.m13.loadBangers() || []; } catch { bangers = []; }
+      updateBangersBadge();
+    }
+
+    function updateBangersBadge() {
+      const n = bangers.length;
+      bangersBadge.textContent = n;
+      bangersBadge.hidden = n === 0;
+    }
+
+    function isBanger(track) {
+      return bangers.some(b => b.path === track.path);
+    }
+
+    async function addBanger(track) {
+      if (isBanger(track)) return;
+      bangers.push(track);
+      await window.m13.saveBangers(bangers);
+      updateBangersBadge();
+      // Refresh ⚡ state in current table without full re-render
+      document.querySelectorAll(`.banger-row-btn[data-banger-path="${CSS.escape(track.path)}"]`).forEach(btn => {
+        btn.classList.add('is-banger');
+        btn.title = 'Remove from Bangers';
+      });
+      document.querySelectorAll(`.banger-indicator[data-banger-path="${CSS.escape(track.path)}"]`).forEach(el => el.hidden = false);
+      if (currentView === 'bangers') renderBangers();
+    }
+
+    async function removeBanger(track) {
+      bangers = bangers.filter(b => b.path !== track.path);
+      await window.m13.saveBangers(bangers);
+      updateBangersBadge();
+      document.querySelectorAll(`.banger-row-btn[data-banger-path="${CSS.escape(track.path)}"]`).forEach(btn => {
+        btn.classList.remove('is-banger');
+        btn.title = 'Add to Bangers';
+      });
+      document.querySelectorAll(`.banger-indicator[data-banger-path="${CSS.escape(track.path)}"]`).forEach(el => el.hidden = true);
+      if (currentView === 'bangers') renderBangers();
+    }
+
+    async function toggleBanger(track) {
+      isBanger(track) ? await removeBanger(track) : await addBanger(track);
+    }
+
+    function renderBangers() {
+      const empty   = document.getElementById('bangersEmpty');
+      const wrap    = document.getElementById('bangersTableWrap');
+      const body    = document.getElementById('bangersTableBody');
+      const counter = document.getElementById('bangersCountLabel');
+      counter.textContent = bangers.length
+        ? `${bangers.length} track${bangers.length === 1 ? '' : 's'}`
+        : '';
+      if (bangers.length === 0) { empty.hidden = false; wrap.hidden = true; return; }
+      empty.hidden = false; // keep visible only when empty
+      empty.hidden = true;
+      wrap.hidden  = false;
+      body.innerHTML = bangers.map(track => {
+        const cachedArt = artworkCache.get(track.path);
+        const artCell = cachedArt
+          ? `<td class="art-cell"><img class="track-art" src="${cachedArt}" alt="" /></td>`
+          : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div></td>`;
+        const fmt = (track.ext || '').replace('.', '').toUpperCase();
+        return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">
+          ${artCell}
+          <td class="track-name">${track.name}</td>
+          <td class="muted">${track.artist || '—'}</td>
+          <td class="muted">${track.bpm || '—'}</td>
+          <td class="muted key-cell">${track.key || '—'}</td>
+          <td class="muted">${track.genre || '—'}</td>
+          <td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td>
+          <td class="muted">${formatSize(track.size)}</td>
+          <td class="copy-cell"><div class="row-actions">
+            <button class="bangers-remove-btn" data-remove-path="${track.path}" type="button" title="Remove from Bangers">✕</button>
+          </div></td>
+        </tr>`;
+      }).join('');
+      observeArtCells();
+
+      // Play on row click
+      body.addEventListener('click', (e) => {
+        if (e.target.closest('.bangers-remove-btn')) return;
+        const row = e.target.closest('tr[data-track-path]');
+        if (!row) return;
+        const t = bangers.find(b => b.path === row.dataset.trackPath);
+        if (t) playTrack(t);
+      }, { once: true }); // re-registered each render so use once:true + delegate
+    }
+
+    // Delegate remove clicks from bangers table
+    document.getElementById('bangersTableBody').addEventListener('click', (e) => {
+      const btn = e.target.closest('.bangers-remove-btn');
+      if (!btn) return;
+      const t = bangers.find(b => b.path === btn.dataset.removePath);
+      if (t) removeBanger(t);
+    });
+    // Delegate play clicks from bangers table
+    document.getElementById('bangersTableBody').addEventListener('click', (e) => {
+      if (e.target.closest('.bangers-remove-btn')) return;
+      const row = e.target.closest('tr[data-track-path]');
+      if (!row) return;
+      const t = bangers.find(b => b.path === row.dataset.trackPath);
+      if (t) playTrack(t);
+    });
+
+    bangersTabBtn.addEventListener('click', () => switchView('bangers'));
+
+    // Load bangers on startup
+    loadBangers();
 
     // ── Sets scanning & rendering ─────────────────────────────────────────────
     function formatDuration(seconds) {
@@ -3394,7 +4602,7 @@
 
     // Palette of drive colours — cycles if more than 5 drives connected
     const DRIVE_COLORS = [
-      { bg: 'rgba(200,241,53,0.10)',  border: 'rgba(200,241,53,0.35)',  text: '#c8f135' },
+      { bg: 'rgba(240,192,64,0.10)',  border: 'rgba(240,192,64,0.35)',  text: '#f0c040' },
       { bg: 'rgba(100,180,255,0.10)', border: 'rgba(100,180,255,0.35)', text: '#64b4ff' },
       { bg: 'rgba(255,140,100,0.10)', border: 'rgba(255,140,100,0.35)', text: '#ff8c64' },
       { bg: 'rgba(180,130,255,0.10)', border: 'rgba(180,130,255,0.35)', text: '#b482ff' },
@@ -3435,14 +4643,34 @@
             </td>
           </tr>`);
 
-          for (const s of driveSets) {
+          // Sort this drive's sets newest-first by mtime, then filename fallback
+          const sortedDriveSets = [...driveSets].sort((a, b) => {
+            if (a.mtime && b.mtime) return b.mtime - a.mtime;
+            return b.filename.localeCompare(a.filename);
+          });
+
+          for (const s of sortedDriveSets) {
             const tags = setTagsCache.get(s.path) || {};
             const labelHtml = tags.setName
               ? `<br><span class="set-label">🏷 ${tags.setName}</span>`
               : '';
+            // Format date from mtime
+            let dateStr = '—';
+            if (s.mtime) {
+              const d = new Date(s.mtime);
+              dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            } else {
+              // Try to parse date from filename e.g. 2024-03-15_REC001.mp3
+              const m = s.filename.match(/(\d{4})[-_](\d{2})[-_](\d{2})/);
+              if (m) {
+                const d = new Date(+m[1], +m[2] - 1, +m[3]);
+                dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+              }
+            }
             rows.push(`<tr data-set-path="${s.path}">
               <td><span class="set-filename">${s.filename}</span>${labelHtml}</td>
-              <td class="muted">${s.duration ? formatDuration(s.duration) : '—'}</td>
+              <td><span class="set-duration-big">${s.duration ? formatDuration(s.duration) : '—'}</span></td>
+              <td class="set-date">${dateStr}</td>
               <td class="muted">${formatSize(s.size)}</td>
               <td class="action-cell" style="display:flex;gap:6px;align-items:center">
                 <button class="tag-set-btn" data-set-path="${s.path}" type="button">🏷 Tag Set</button>
@@ -3488,6 +4716,16 @@
     }
 
     // ── History scanning & rendering ──────────────────────────────────────────
+    function formatHistoryDate(sessionStr) {
+      // Session strings from rekordbox look like "2024-03-15" or "2024/03/15 20:45"
+      // Try to parse a human date from the raw session identifier
+      const m = sessionStr.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+      if (!m) return { label: sessionStr, sort: sessionStr };
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
+      const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      return { label, sort: `${m[1]}${m[2]}${m[3]}` };
+    }
+
     async function refreshHistory() {
       historyLoaded = false;
       historyScanning.hidden = false;
@@ -3500,19 +4738,80 @@
           historyEmptyState.hidden = false;
           return;
         }
-        const sessions = new Set(entries.map(e => e.session));
-        document.getElementById('historySessionCount').textContent = sessions.size;
+
+        // Group entries by session identifier
+        const sessionMap = new Map();
+        for (const e of entries) {
+          if (!sessionMap.has(e.session)) sessionMap.set(e.session, []);
+          sessionMap.get(e.session).push(e);
+        }
+
+        // Sort sessions newest-first using date parsed from session string
+        const sortedSessions = [...sessionMap.entries()].sort((a, b) => {
+          const da = formatHistoryDate(a[0]).sort;
+          const db = formatHistoryDate(b[0]).sort;
+          return db.localeCompare(da);
+        });
+
+        document.getElementById('historySessionCount').textContent = sortedSessions.length;
         document.getElementById('historyTrackCount').textContent = entries.length;
-        historyTableBody.innerHTML = entries.map(e => `
-          <tr>
-            <td style="color:var(--muted);text-align:right;padding-right:8px">${e.playOrder}</td>
-            <td style="color:var(--muted);white-space:nowrap">${e.session}</td>
-            <td>${e.title || '—'}</td>
-            <td style="color:var(--muted)">${e.artist || '—'}</td>
-            <td style="white-space:nowrap">${e.bpm || '—'}</td>
-          </tr>`).join('');
+
+        const rows = [];
+        for (const [session, sessionEntries] of sortedSessions) {
+          const { label } = formatHistoryDate(session);
+          const trackCount = sessionEntries.length;
+
+          // Build tracklist text for clipboard
+          const tracklistText = sessionEntries
+            .map((e, i) => `${i + 1}. ${e.title || 'Unknown'}${e.artist ? ' — ' + e.artist : ''}${e.bpm ? ' (' + e.bpm + ' BPM)' : ''}`)
+            .join('\n');
+
+          // Date/session header row
+          rows.push(`<tr class="drive-group-header" style="pointer-events:auto">
+            <td colspan="4" style="padding:0">
+              <div class="history-date-header">
+                <span class="history-date-label">${label}</span>
+                <span class="history-date-count">${trackCount} track${trackCount === 1 ? '' : 's'}</span>
+                <span class="history-session-id">${session}</span>
+                <button class="history-copy-btn" data-tracklist="${encodeURIComponent(tracklistText)}" type="button">
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 7.5V1.5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  Copy Tracklist
+                </button>
+              </div>
+            </td>
+          </tr>`);
+
+          // Track rows for this session
+          for (const e of sessionEntries) {
+            rows.push(`<tr class="history-session-row">
+              <td style="color:var(--muted-2);text-align:right;width:32px;font-size:11px">${e.playOrder}</td>
+              <td>${e.title || '—'}</td>
+              <td class="muted">${e.artist || '—'}</td>
+              <td class="muted" style="white-space:nowrap">${e.bpm || '—'}</td>
+            </tr>`);
+          }
+        }
+
+        historyTableBody.innerHTML = rows.join('');
         historyTableWrap.hidden = false;
         historyLoaded = true;
+
+        // Wire copy buttons
+        historyTableBody.querySelectorAll('.history-copy-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const text = decodeURIComponent(btn.dataset.tracklist);
+            try {
+              await navigator.clipboard.writeText(text);
+              btn.textContent = '✓ Copied!';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 7.5V1.5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Copy Tracklist`;
+                btn.classList.remove('copied');
+              }, 2000);
+            } catch {}
+          });
+        });
+
       } catch (err) {
         historyScanning.hidden = true;
         historyEmptyState.hidden = false;
@@ -3520,7 +4819,9 @@
       }
     }
 
+    document.getElementById('brandHome').addEventListener('click', () => switchView('library'));
     libraryTabBtn.addEventListener('click', () => switchView('library'));
+    rawTabBtn.addEventListener('click',     () => switchView('raw'));
     setsTabBtn.addEventListener('click',    () => switchView('sets'));
     historyTabBtn.addEventListener('click', () => switchView('history'));
 
@@ -4022,6 +5323,15 @@
         startCopy(copyBtn.dataset.copyPath, copyBtn.dataset.copyName);
         return;
       }
+      const bangerBtn = event.target.closest('.banger-row-btn');
+      if (bangerBtn) {
+        event.stopPropagation();
+        const t = tracks.find(x => x.path === bangerBtn.dataset.bangerPath);
+        if (t) toggleBanger(t);
+        return;
+      }
+      // "+ Add to queue" button — handled by its own listener; don't play
+      if (event.target.closest('.add-row-btn')) return;
       const row = event.target.closest('tr[data-track-path]');
       if (!row) return;
       const track = tracks.find((item) => item.path === row.dataset.trackPath);
@@ -4038,6 +5348,7 @@
     audioPlayer.addEventListener('ended', () => { setPlayState(false); });
     document.getElementById('openLibraryBtn').addEventListener('click', openLibrary);
     document.getElementById('emptyOpenBtn').addEventListener('click', openLibrary);
+    window.m13.onMenuOpenLibrary(() => openLibrary());
 
     async function scanRekordbox() {
       const btn = document.getElementById('rekordboxBtn');
@@ -4058,6 +5369,7 @@
         tracks = result.tracks;
         window._m13 = { tracks, renderTracks, activeFormat: () => activeFormat, activeBpm: () => activeBpm };
         currentLibraryFolder = 'rekordbox';
+        updateRawBadge();
         showLibView(libView);
       } finally {
         btn.textContent = origText;
@@ -4068,7 +5380,45 @@
     document.getElementById('rekordboxBtn').addEventListener('click', scanRekordbox);
     document.getElementById('emptyRekordboxBtn').addEventListener('click', scanRekordbox);
 
+    // ── Search clear button + result count ───────────────────────────────────
+    const searchClearBtn = document.getElementById('searchClearBtn');
+    const searchCountEl  = document.getElementById('searchCount');
+
+    function updateSearchUI() {
+      const hasVal = searchInput.value.length > 0;
+      searchClearBtn.hidden = !hasVal;
+      if (!hasVal) searchCountEl.hidden = true;
+    }
+
+    searchClearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input'));
+      searchInput.focus();
+    });
+
+    // Expose a way for renderTracks to set the count label
+    function setSearchCount(shown, total) {
+      if (!searchInput.value.trim()) {
+        searchCountEl.hidden = true;
+        return;
+      }
+      searchCountEl.textContent = `${shown} of ${total}`;
+      searchCountEl.hidden = false;
+    }
+
+    // ── CMD+F → focus search ─────────────────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (currentView === 'library') {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    });
+
     searchInput.addEventListener('input', () => {
+      updateSearchUI();
       if (libView === 'tracks' || libView === 'folders') renderTracks(tracks);
       else showLibView(libView, { album: libDrillAlbum ? libDrillAlbum : undefined, artist: libDrillArtist ? libDrillArtist : undefined });
     });
@@ -4330,38 +5680,72 @@
 
     // ── M8: Similar Tracks ───────────────────────────────────────────────────
 
-    // Circle of Fifths — each key maps to its compatible neighbours.
-    // Compatible = same key, relative major/minor, and the two adjacent keys on the CoF.
-    // Keys are stored as the canonical string that rekordbox / music-metadata emit,
-    // e.g. "1A", "8B", "Cmaj", "Am", etc.  We normalise everything to Camelot notation
-    // internally because it makes harmonic distance trivial to compute.
-    const CAMELOT_MAJOR = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F'];
-    const CAMELOT_MINOR = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm'];
-    // Maps "1A"→{num:1,ring:'A'}, "1B"→{num:1,ring:'B'}, etc.
-    const CAMELOT_RE = /^(\d{1,2})([AB])$/i;
+    // ── Key parsing — Camelot wheel ───────────────────────────────────────────
+    //
+    // Supports all formats emitted by rekordbox, Serato, Traktor, music-metadata:
+    //   Camelot:  "8A", "11B"
+    //   Open Key: "1m", "6d"
+    //   Note+quality: "Am", "C#m", "Bbm", "Ebm", "F#m", "Cmaj", "Db minor"
+    //   Note only:  "A", "C#" (assumed major)
+    //   Bare number: "5", "12" → unparseable, fall through to BPM matching
+    //
+    // Each note maps to a fixed Camelot position on the wheel.
+    // Major (B ring) — Camelot 1B–12B:
+    const _MAJOR = { C:1, G:2, D:3, A:4, E:5, B:6, Cb:6, F:12,
+                     Gb:7, 'F#':7, Db:8, 'C#':8, Ab:9, 'G#':9,
+                     Eb:10, 'D#':10, Bb:11, 'A#':11 };
+    // Minor (A ring) — Camelot 1A–12A:
+    const _MINOR = { A:1, E:2, B:3, 'F#':4, Gb:4, 'C#':5, Db:5,
+                     'G#':6, Ab:6, Eb:7, 'D#':7, Bb:8, 'A#':8,
+                     F:9, C:10, G:11, D:12 };
+    // Open Key number → Camelot number: Camelot = ((ok + 6) % 12) + 1
+    function _okToCamelot(n) { return ((n + 6) % 12) + 1; }
 
-    // Parse any key string into {num, ring} Camelot coords, or null if unrecognised.
     function parseCamelot(raw) {
-      if (!raw) return null;
+      if (raw === null || raw === undefined || raw === '') return null;
       const s = String(raw).trim();
-      // Already Camelot notation e.g. "8A", "11B"
-      const m = s.match(CAMELOT_RE);
-      if (m) return { num: parseInt(m[1], 10), ring: m[2].toUpperCase() };
-      // Try to convert note name to Camelot
-      // Strip trailing "maj"/"min"/"major"/"minor" variants
-      const clean = s.replace(/major/i,'').replace(/minor/i,'m').replace(/maj/i,'').replace(/min(?!or)/i,'m').trim();
-      // Minor keys end with 'm' (e.g. "Am", "F#m")
-      const isMinor = clean.endsWith('m');
-      const note = isMinor ? clean.slice(0,-1) : clean;
-      const arr = isMinor ? CAMELOT_MINOR : CAMELOT_MAJOR;
-      // Normalise enharmonics
-      const enharmonic = { 'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb',
-                            'Db':'Db','Eb':'Eb','Gb':'Gb','Ab':'Ab','Bb':'Bb' };
-      const n = enharmonic[note] || note;
-      const idx = arr.indexOf(n);
-      if (idx === -1) return null;
-      const num = idx + 1; // 1-based
-      return { num, ring: isMinor ? 'A' : 'B' };
+      if (!s) return null;
+
+      // 1. Camelot: "8A", "11B" (case-insensitive)
+      const mc = s.match(/^(\d{1,2})([AB])$/i);
+      if (mc) {
+        const num = parseInt(mc[1], 10);
+        if (num >= 1 && num <= 12) return { num, ring: mc[2].toUpperCase() };
+      }
+
+      // 2. Open Key: "1m" / "1d" (m=minor A-ring, d=major B-ring)
+      const ok = s.match(/^(\d{1,2})([md])$/i);
+      if (ok) {
+        const n = parseInt(ok[1], 10);
+        if (n >= 1 && n <= 12) {
+          const isMinor = ok[2].toLowerCase() === 'm';
+          return { num: _okToCamelot(n), ring: isMinor ? 'A' : 'B' };
+        }
+      }
+
+      // 3. Bare integer — ambiguous, skip harmonic matching
+      if (/^\d{1,2}$/.test(s)) return null;
+
+      // 4. Note-name notation
+      // Normalise verbose quality words first
+      let clean = s
+        .replace(/\bminor\b/gi, 'm')
+        .replace(/\bmajor\b/gi, '')
+        .replace(/\bmin\b/gi,   'm')
+        .replace(/\bmaj\b/gi,   '')
+        .replace(/\s+/g, '')
+        .trim();
+
+      // Determine quality: ends with lowercase 'm' after cleanup = minor
+      const isMinor = clean.endsWith('m') && clean.length > 1;
+      const root    = isMinor ? clean.slice(0, -1) : clean;
+
+      // Look up in the appropriate map
+      const num = isMinor ? _MINOR[root] : _MAJOR[root];
+      if (num !== undefined) return { num, ring: isMinor ? 'A' : 'B' };
+
+      // Edge case: try the other map (some tracks stored "C" meaning Cm)
+      return null;
     }
 
     // Harmonic compatibility: same position = exact match, ±1 on same ring = adjacent,
@@ -4398,12 +5782,15 @@
     }
 
     function findSimilarTracks(source, library) {
+      const sourceHasKey = !!parseCamelot(source.key);
       const results = [];
       for (const t of library) {
         if (t.path === source.path) continue;
-        const hm = harmonicMatch(source.key, t.key);
+        const hm = sourceHasKey ? harmonicMatch(source.key, t.key) : false;
         const bm = bpmMatch(source.bpm, t.bpm);
         const gm = genreMatch(source.genre, t.genre);
+        // If source has no parseable key, require at least BPM or genre match
+        if (!sourceHasKey && !bm && !gm) continue;
         const score = (hm ? 1 : 0) + (bm ? 1 : 0) + (gm ? 1 : 0);
         if (score === 0) continue;
         const reasons = [];
@@ -4432,7 +5819,36 @@
     }
     document.getElementById('m8CloseBtn').addEventListener('click', closeM8);
 
+    function _m8DebugHTML(source) {
+      const parsed   = parseCamelot(source.key);
+      const parsedStr = parsed ? `${parsed.num}${parsed.ring}` : 'null';
+      const bpmCount  = tracks.filter(t => t.path !== source.path && bpmMatch(source.bpm, t.bpm)).length;
+      const genreCount = tracks.filter(t => t.path !== source.path && genreMatch(source.genre, t.genre)).length;
+      const rows = [
+        ['Library size',        tracks.length],
+        ['Track name',          source.name   || '(none)'],
+        ['Raw key',             source.key    || '(none)'],
+        ['Parsed key',          parsedStr],
+        ['BPM',                 source.bpm    || '(none)'],
+        ['Genre',               source.genre  || '(none)'],
+        ['BPM matches (±4)',    bpmCount],
+        ['Genre matches',       genreCount],
+      ];
+      const rowsHTML = rows.map(([label, val]) =>
+        `<div class="m8-debug-row"><span class="m8-debug-label">${label}</span><span class="m8-debug-val">${val}</span></div>`
+      ).join('');
+      return `<details class="m8-debug-block" open><summary>Debug</summary>${rowsHTML}</details>`;
+    }
+
     async function renderM8Panel(source) {
+      try { await _renderM8PanelInner(source); }
+      catch(err) {
+        console.error('[M8] renderM8Panel crashed:', err);
+        m8Results.innerHTML = `<div class="m8-empty"><span style="color:#f87171">M8 error: ${err.message}</span><br><span style="font-size:10px;font-family:monospace;opacity:0.6">${err.stack || ''}</span></div>`;
+      }
+    }
+    async function _renderM8PanelInner(source) {
+      try { console.log('[M8] panel opened — full track object:', JSON.parse(JSON.stringify(source))); } catch(e) { console.log('[M8] panel opened (non-serialisable):', source, e); }
       document.getElementById('m8TrackName').textContent = source.name;
       m8Results.innerHTML = '';
 
@@ -4445,7 +5861,8 @@
               <circle cx="16" cy="16" r="4" fill="currentColor"/>
             </svg>
             <span>No harmonic or BPM matches<br>found in this library.</span>
-          </div>`;
+          </div>
+          ${_m8DebugHTML(source)}`;
         return;
       }
 
@@ -4459,10 +5876,7 @@
         if (!groups[score].length) continue;
         html += `<div class="m8-section-label">${groupLabels[score]} · ${groups[score].length}</div>`;
         for (const { track: t, score: s, reasons } of groups[score]) {
-          const cachedArt = artworkCache.get(t.path);
-          const artHtml = cachedArt
-            ? `<img class="m8-art" src="${cachedArt}" alt="" />`
-            : `<div class="m8-art"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2" opacity="0.4"/><circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.4"/></svg></div>`;
+          const artHtml = `<div class="m8-art" data-m8-art-path="${t.path}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2" opacity="0.4"/><circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.4"/></svg></div>`;
           const pips = [1,2,3].map(i => `<span class="m8-pip${i<=s?' on':''}"></span>`).join('');
           const tags = reasons.map(r => `<span class="m8-tag m8-tag-${r.type}">${r.label}</span>`).join('');
           const inQueue = playlist.some(p => p.path === t.path);
@@ -4478,18 +5892,20 @@
           </div>`;
         }
       }
-      m8Results.innerHTML = html;
+      m8Results.innerHTML = html + _m8DebugHTML(source);
 
-      // Lazy-load artwork for items not yet in cache
-      m8Results.querySelectorAll('.m8-result-item[data-track-path]').forEach(item => {
-        const p = item.getAttribute('data-track-path');
-        if (!artworkCache.has(p)) {
-          fetchArtwork(p).then(url => {
-            if (!url) return;
-            const el = m8Results.querySelector(`.m8-result-item[data-track-path="${CSS.escape(p)}"] .m8-art`);
-            if (el) { const img = document.createElement('img'); img.className='m8-art'; img.src=url; el.replaceWith(img); }
-          });
-        }
+      // Fill artwork: use cache immediately, otherwise fetch async
+      m8Results.querySelectorAll('.m8-result-item [data-m8-art-path]').forEach(el => {
+        const p = el.getAttribute('data-m8-art-path');
+        const setArt = url => {
+          if (!url || !el.isConnected) return;
+          const img = document.createElement('img');
+          img.className = 'm8-art';
+          img.src = url;
+          el.replaceWith(img);
+        };
+        if (artworkCache.has(p)) { setArt(artworkCache.get(p)); }
+        else { fetchArtwork(p).then(url => { if (url) setArt(url); }); }
       });
 
       // + button: add to queue (stop propagation so the row click doesn't also play the track)
@@ -4529,10 +5945,6 @@
       await renderM8Panel(currentTrack);
     });
 
-    // Re-render M8 panel when the playing track changes (if panel is open)
-    audioPlayer.addEventListener('play', () => {
-      if (m8Open && currentTrack) renderM8Panel(currentTrack);
-    });
 
     // ── Browse Sidebar ────────────────────────────────────────────────────────
     const browseSidebar = document.getElementById('browseSidebar');
@@ -4699,10 +6111,6 @@
       localLabel.textContent = 'Local';
       browseTree.appendChild(localLabel);
 
-      const home = window.location.pathname.split('/').slice(0, 3).join('/') || '/Users/' + (await window.m13.getLastFolder() || '').split('/')[2];
-      const localRoots = [
-        { name: 'Music', path: `${require ? '' : '/Users/'}music` },
-      ];
       // Derive home from last folder path
       const lastF = await window.m13.getLastFolder();
       if (lastF) {
@@ -4728,7 +6136,7 @@
     // ── Ambient Mode ─────────────────────────────────────────────────────────
     const ambientOverlay      = document.getElementById('ambientOverlay');
     const ambientBtn          = document.getElementById('ambientBtn');
-    const ambientClock        = document.getElementById('ambientClock');
+    const ambientClockCanvas  = document.getElementById('ambientClockCanvas');
     const ambientIdle         = document.getElementById('ambientIdle');
     const ambientTrackInfo    = document.getElementById('ambientTrackInfo');
     const ambientArtworkWrap  = document.getElementById('ambientArtworkWrap');
@@ -4822,9 +6230,9 @@
 
         // Gradient: accent at top, dimmer at bottom
         const grad = ambientVizCtx.createLinearGradient(0, y, 0, h);
-        grad.addColorStop(0,   `rgba(200,241,53,${0.85 + val * 0.15})`);
-        grad.addColorStop(0.6, `rgba(200,241,53,${0.35})`);
-        grad.addColorStop(1,   `rgba(200,241,53,0.10)`);
+        grad.addColorStop(0,   `rgba(240,192,64,${0.85 + val * 0.15})`);
+        grad.addColorStop(0.6, `rgba(240,192,64,${0.35})`);
+        grad.addColorStop(1,   `rgba(240,192,64,0.10)`);
 
         ambientVizCtx.fillStyle = grad;
         ambientVizCtx.beginPath();
@@ -4833,13 +6241,122 @@
       }
     }
 
-    // ── Clock ────────────────────────────────────────────────────────────────
+    // ── Analog Clock ─────────────────────────────────────────────────────────
+    let _clockScaled = false;
     function updateAmbientClock() {
+      const ctx = ambientClockCanvas.getContext('2d');
+      const dpr  = window.devicePixelRatio || 1;
+      const size = 800;
+
+      if (!_clockScaled) {
+        ambientClockCanvas.width  = size * dpr;
+        ambientClockCanvas.height = size * dpr;
+        ambientClockCanvas.style.width  = size + 'px';
+        ambientClockCanvas.style.height = size + 'px';
+        ctx.scale(dpr, dpr);
+        _clockScaled = true;
+      }
+
+      const cx = size / 2, cy = size / 2, r = size / 2 - 8;
+      ctx.clearRect(0, 0, size, size);
+
+      // Outer zodiac ring — glowing ice blue
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(168,216,238,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = 'rgba(168,216,238,0.6)';
+      ctx.shadowBlur  = 8;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+
+      // Inner zodiac band ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 22, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(168,216,238,0.2)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      // Zodiac tick marks (60 minor, 12 major)
+      for (let i = 0; i < 60; i++) {
+        const ang     = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        const isMajor = i % 5 === 0;
+        const len     = isMajor ? 16 : 8;
+        const inner   = r - len;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+        ctx.lineTo(cx + Math.cos(ang) * (r - 2), cy + Math.sin(ang) * (r - 2));
+        ctx.strokeStyle = isMajor
+          ? 'rgba(168,216,238,0.7)'
+          : 'rgba(168,216,238,0.28)';
+        ctx.lineWidth = isMajor ? 2 : 1;
+        if (isMajor) {
+          ctx.shadowColor = 'rgba(168,216,238,0.5)';
+          ctx.shadowBlur  = 4;
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // CoF ring — glowing gold band
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 36, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(240,192,64,0.28)';
+      ctx.lineWidth = 10;
+      ctx.shadowColor = 'rgba(240,192,64,0.35)';
+      ctx.shadowBlur  = 12;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+
+      // CoF 12 segments (alternating brightness)
+      for (let i = 0; i < 12; i++) {
+        const start = (i / 12) * Math.PI * 2 - Math.PI / 2 + 0.05;
+        const end   = ((i + 1) / 12) * Math.PI * 2 - Math.PI / 2 - 0.05;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 36, start, end);
+        ctx.strokeStyle = i % 2 === 0
+          ? 'rgba(240,192,64,0.5)'
+          : 'rgba(240,192,64,0.25)';
+        ctx.lineWidth = 10;
+        ctx.stroke();
+      }
+
+      // Clock hands
       const now = new Date();
-      const hh  = String(now.getHours()).padStart(2, '0');
-      const mm  = String(now.getMinutes()).padStart(2, '0');
-      const ss  = String(now.getSeconds()).padStart(2, '0');
-      ambientClock.textContent = `${hh}:${mm}:${ss}`;
+      const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+      const min = now.getMinutes() + sec / 60;
+      const hr  = (now.getHours() % 12) + min / 60;
+
+      function hand(angle, length, width, color, glowColor, tailLen = 14) {
+        const ang = (angle * Math.PI * 2) - Math.PI / 2;
+        ctx.save();
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur  = 12;
+        ctx.beginPath();
+        ctx.moveTo(cx - Math.cos(ang) * tailLen, cy - Math.sin(ang) * tailLen);
+        ctx.lineTo(cx + Math.cos(ang) * length,  cy + Math.sin(ang) * length);
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = width;
+        ctx.lineCap     = 'round';
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Hour — thick gold
+      hand(hr / 12,  r * 0.48, 5,   'rgba(240,192,64,1)',   'rgba(240,192,64,0.8)', 18);
+      // Minute — medium gold
+      hand(min / 60, r * 0.70, 3,   'rgba(240,192,64,0.85)','rgba(240,192,64,0.6)', 14);
+      // Second — thin ice blue
+      hand(sec / 60, r * 0.78, 1.5, 'rgba(168,216,238,1)',  'rgba(168,216,238,0.7)', 20);
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(240,192,64,0.9)';
+      ctx.shadowColor = 'rgba(240,192,64,0.8)';
+      ctx.shadowBlur  = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
 
     // ── Progress ─────────────────────────────────────────────────────────────
@@ -4902,9 +6419,9 @@
         ambientArtworkWrap.innerHTML = `
           <div class="ambient-artwork-placeholder">
             <svg class="ambient-disc" width="80" height="80" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="36" stroke="rgba(200,241,53,0.3)" stroke-width="1.5"/>
-              <circle cx="40" cy="40" r="22" stroke="rgba(200,241,53,0.15)" stroke-width="1"/>
-              <circle cx="40" cy="40" r="6"  fill="rgba(200,241,53,0.2)"/>
+              <circle cx="40" cy="40" r="36" stroke="rgba(240,192,64,0.3)" stroke-width="1.5"/>
+              <circle cx="40" cy="40" r="22" stroke="rgba(240,192,64,0.15)" stroke-width="1"/>
+              <circle cx="40" cy="40" r="6"  fill="rgba(240,192,64,0.2)"/>
             </svg>
           </div>`;
         fetchArtwork(currentTrack.path).then(url => {
@@ -5050,7 +6567,7 @@
 
       ambientOverlay.classList.add('active');
 
-      ambientClockId = setInterval(updateAmbientClock, 1000);
+      ambientClockId = setInterval(updateAmbientClock, 50); // smooth second hand
       updateAmbientClock();
 
       cancelAnimationFrame(ambientRafId);
@@ -5147,6 +6664,73 @@
           arrowTapTimer = null;
           flushArrowTaps();
         }, 400);
+      }
+    });
+
+    // ── Vinyl scratch easter egg ──────────────────────────────────────────────
+    // Sequence: ArrowLeft → ArrowDown → ArrowRight within 800 ms
+    const SCRATCH_SEQ = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
+    let scratchBuf = [];
+    let scratchTimer = null;
+
+    function playScratch() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        // Pitch bend: playback rate sweep simulating a scratch
+        src.playbackRate.setValueAtTime(2.2, ctx.currentTime);
+        src.playbackRate.linearRampToValueAtTime(0.3, ctx.currentTime + 0.15);
+        src.playbackRate.linearRampToValueAtTime(1.6, ctx.currentTime + 0.28);
+        src.playbackRate.linearRampToValueAtTime(0.1, ctx.currentTime + 0.35);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2400;
+        filter.Q.value = 1.8;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.32, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        src.start();
+        src.onended = () => ctx.close();
+      } catch (_) {}
+
+      // Visual flash on player bar
+      const bar = document.getElementById('playerBar');
+      if (bar) {
+        bar.style.transition = 'box-shadow 0.08s';
+        bar.style.boxShadow = '0 0 0 2px rgba(168,216,238,0.7), 0 0 32px rgba(168,216,238,0.25)';
+        setTimeout(() => { bar.style.boxShadow = ''; }, 320);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (['ArrowLeft','ArrowDown','ArrowRight'].includes(e.key)) {
+        const expected = SCRATCH_SEQ[scratchBuf.length];
+        if (e.key === expected) {
+          scratchBuf.push(e.key);
+          if (scratchTimer) clearTimeout(scratchTimer);
+          if (scratchBuf.length === SCRATCH_SEQ.length) {
+            scratchBuf = [];
+            playScratch();
+          } else {
+            scratchTimer = setTimeout(() => { scratchBuf = []; }, 800);
+          }
+        } else {
+          // Wrong key — reset and check if this key starts a new sequence
+          scratchBuf = e.key === SCRATCH_SEQ[0] ? [e.key] : [];
+          if (scratchTimer) clearTimeout(scratchTimer);
+          if (scratchBuf.length) scratchTimer = setTimeout(() => { scratchBuf = []; }, 800);
+        }
       }
     });
 
@@ -5252,6 +6836,7 @@
 
     // Player bar queue button
     const playerAddToQueueBtn = document.getElementById('playerAddToQueueBtn');
+    const playerBangerBtn     = document.getElementById('playerBangerBtn');
 
     function syncPlayerQueueBtn() {
       if (!currentTrack) return;
@@ -5260,10 +6845,22 @@
       playerAddToQueueBtn.title = inQueue ? 'Already in queue' : 'Add to queue';
     }
 
+    function syncPlayerBangerBtn() {
+      if (!currentTrack) return;
+      const on = isBanger(currentTrack);
+      playerBangerBtn.classList.toggle('in-queue', on); // reuse in-queue style for highlight
+      playerBangerBtn.title = on ? 'Remove from Bangers' : 'Add to Bangers';
+    }
+
     playerAddToQueueBtn.addEventListener('click', () => {
       if (!currentTrack) return;
       addToPlaylist(currentTrack);
       syncPlayerQueueBtn();
+    });
+
+    playerBangerBtn.addEventListener('click', () => {
+      if (!currentTrack) return;
+      toggleBanger(currentTrack).then(() => syncPlayerBangerBtn());
     });
 
     // Open/close playlist panel

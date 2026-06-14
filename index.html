@@ -632,12 +632,26 @@
     .playlist-item-remove {
       width: 22px; height: 22px;
       display: flex; align-items: center; justify-content: center;
-      border: 0; background: transparent; color: var(--muted-2);
+      border: 0; background: transparent; color: #a8d8ee;
       border-radius: 5px; cursor: pointer; flex-shrink: 0;
       font-size: 12px; line-height: 1;
       transition: color var(--t), background var(--t);
     }
-    .playlist-item-remove:hover { color: var(--red); background: rgba(255,107,107,0.08); }
+    .playlist-item-remove:hover { color: #ffffff; background: rgba(168,216,238,0.10); }
+    .playlist-item:hover .playlist-item-num { color: var(--accent); }
+    .playlist-item.pl-playing { background: rgba(240,192,64,0.06); }
+    .playlist-item.pl-playing .playlist-item-num { color: var(--accent); font-size: 10px; }
+    .playlist-item.pl-playing .playlist-item-name { color: var(--accent); }
+    .pl-drag-handle {
+      display: flex; align-items: center; justify-content: center;
+      width: 18px; flex-shrink: 0; cursor: grab; color: #a8d8ee;
+      font-size: 13px; line-height: 1;
+      user-select: none; transition: color 0.12s;
+    }
+    .pl-drag-handle:hover { color: #ffffff; }
+    .playlist-item.pl-dragging { opacity: 0.35; }
+    .playlist-item.pl-drop-above { border-top: 2px solid var(--accent); }
+    .playlist-item.pl-drop-below { border-bottom: 2px solid var(--accent); }
 
     /* Playlist toggle btn in toolbar */
     .btn-playlist {
@@ -2347,6 +2361,238 @@
   </style>
 </head>
 <body>
+
+  <!-- ── Startup splash — covers everything until license check resolves ── -->
+  <div id="licenseSplash" style="
+    position:fixed;inset:0;z-index:10000;
+    background:#0a0a0a;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity 0.35s ease;
+    pointer-events:none;
+  ">
+    <svg viewBox="0 0 200 60" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
+      <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="48"
+        letter-spacing="-3" fill="#f0c040">M13</text>
+    </svg>
+  </div>
+
+  <!-- ── License activation modal — hidden until check fails ──────────────── -->
+  <div id="licenseModal" style="
+    position:fixed;inset:0;z-index:9999;
+    background:#0a0a0a;
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;
+    font-family:Inter,system-ui,sans-serif;
+  ">
+    <!-- M13 logo placeholder (will be replaced by SVG if available) -->
+    <div style="margin-bottom:32px;opacity:0.9;">
+      <svg viewBox="0 0 200 60" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
+        <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle"
+          font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="48"
+          letter-spacing="-3" fill="#f0c040">M13</text>
+      </svg>
+    </div>
+
+    <div style="width:100%;max-width:420px;padding:0 24px;">
+      <h1 id="licModalTitle" style="font-size:1.4rem;font-weight:700;letter-spacing:-0.03em;color:#f0f0f0;margin-bottom:6px;text-align:center;">Activate M13</h1>
+      <p id="licModalSub" style="font-size:0.875rem;color:#888;text-align:center;margin-bottom:32px;line-height:1.6;">Enter your license key to continue. Keys are included in your purchase email.</p>
+
+      <div id="licModalInput" style="margin-bottom:12px;">
+        <input id="licKeyInput" type="text" placeholder="M13-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"
+          maxlength="19"
+          style="width:100%;background:#161616;border:1.5px solid #2a2a2a;border-radius:10px;
+            padding:14px 18px;color:#f0f0f0;font-size:1.1rem;font-family:'SF Mono','Fira Code',monospace;
+            letter-spacing:0.08em;text-align:center;outline:none;transition:border-color 0.15s;
+            box-sizing:border-box;"
+          onkeyup="licFormatKey(this)"
+          onkeydown="if(event.key==='Enter')licActivate()"
+        />
+      </div>
+
+      <button id="licActivateBtn" onclick="licActivate()" style="
+        width:100%;padding:14px;border-radius:10px;border:none;
+        background:#f0c040;color:#0a0a0a;font-size:1rem;font-weight:700;
+        font-family:inherit;cursor:pointer;transition:opacity 0.15s;margin-bottom:12px;
+      ">Activate</button>
+
+      <div id="licMsg" style="min-height:36px;font-size:0.85rem;text-align:center;color:#888;padding:4px 0;"></div>
+
+      <div style="text-align:center;margin-top:16px;">
+        <a href="https://m13app.com" onclick="require('electron').shell.openExternal('https://m13app.com');return false;"
+          style="color:#f0c040;font-size:0.85rem;text-decoration:none;opacity:0.8;">
+          Buy M13 → m13app.com
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- License info modal (shown from menu) -->
+  <div id="licenseInfoModal" hidden style="
+    position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.8);
+    display:flex;align-items:center;justify-content:center;
+    font-family:Inter,system-ui,sans-serif;
+  ">
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:32px;width:380px;max-width:90vw;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 style="font-size:1rem;font-weight:700;color:#f0f0f0;">License</h2>
+        <button onclick="document.getElementById('licenseInfoModal').hidden=true"
+          style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      <div id="licInfoContent" style="font-size:0.875rem;color:#aaa;line-height:1.8;">Loading…</div>
+      <div style="margin-top:20px;display:flex;gap:10px;">
+        <button onclick="licTransfer()" id="licTransferBtn" style="
+          flex:1;padding:10px;border-radius:8px;border:1px solid #e05252;background:none;
+          color:#e05252;font-size:0.875rem;font-weight:600;cursor:pointer;font-family:inherit;">
+          Transfer
+        </button>
+        <button onclick="document.getElementById('licenseInfoModal').hidden=true" style="
+          flex:1;padding:10px;border-radius:8px;border:none;background:#f0c040;
+          color:#0a0a0a;font-size:0.875rem;font-weight:600;cursor:pointer;font-family:inherit;">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── License modal logic ───────────────────────────────────────────────────
+    // Global flag — true while the activation modal is open so all keyboard
+    // shortcut handlers know to stand down.
+    window._licModalOpen = false;
+
+    function licFormatKey(input) {
+      // Strip everything non-alphanumeric, uppercase, cap at 16 chars (M13 + 12 body).
+      let raw = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      // Drop a typed "M13" prefix so we don't double it
+      if (raw.startsWith('M13')) raw = raw.slice(3);
+      raw = raw.slice(0, 12);
+      const parts = raw.match(/.{1,4}/g) || [];
+      input.value = raw.length ? 'M13-' + parts.join('-') : '';
+      input.style.borderColor = '#2a2a2a';
+    }
+
+    function licSetMsg(text, color) {
+      const el = document.getElementById('licMsg');
+      el.textContent = text;
+      el.style.color = color || '#888';
+    }
+
+    async function licActivate() {
+      const btn = document.getElementById('licActivateBtn');
+      if (btn.disabled) return; // prevent double-fire
+
+      // M13-XXXX-XXXX-XXXX = "M13" (3) + 12 body chars = 15 alphanumeric total
+      const raw = document.getElementById('licKeyInput').value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      if (raw.length < 15) { licSetMsg('Please enter a complete license key (M13-XXXX-XXXX-XXXX).', '#e05252'); return; }
+      const key = document.getElementById('licKeyInput').value.trim();
+
+      btn.disabled = true;
+      btn.textContent = 'Activating…';
+      licSetMsg('');
+
+      try {
+        const result = await window.m13.activateLicense(key);
+        if (result.success) {
+          licSetMsg('✓ License activated! Welcome to M13.', '#4caf7d');
+          btn.textContent = '✓ Activated';
+          window._licModalOpen = false;
+          setTimeout(() => { document.getElementById('licenseModal').remove(); }, 800);
+        } else if (result.status === 'wrong-machine') {
+          licSetMsg('This key is registered to another machine. Visit m13app.com/license to transfer it.', '#e05252');
+          btn.disabled = false; btn.textContent = 'Activate';
+        } else if (result.status === 'invalid') {
+          licSetMsg('Key not found. Check for typos.', '#e05252');
+          document.getElementById('licKeyInput').style.borderColor = '#e05252';
+          btn.disabled = false; btn.textContent = 'Activate';
+        } else if (result.status === 'offline' || result.status === 'server-error') {
+          licSetMsg(result.message || 'Could not reach activation server. Try again.', '#f0c040');
+          btn.disabled = false; btn.textContent = 'Activate';
+        } else {
+          licSetMsg(result.message || 'Activation failed. Try again.', '#e05252');
+          btn.disabled = false; btn.textContent = 'Activate';
+        }
+      } catch (e) {
+        licSetMsg('Error: ' + e.message, '#e05252');
+        btn.disabled = false; btn.textContent = 'Activate';
+      }
+    }
+
+    async function licTransfer() {
+      const info = await window.m13.getLicenseInfo();
+      if (!info.stored) return;
+      const confirmed = confirm(
+        'This will deactivate M13 on this machine.\n\n' +
+        'You can then enter your key on a new machine.\n\n' +
+        'Continue?'
+      );
+      if (!confirmed) return;
+      const result = await window.m13.transferLicense(info.stored.licenseKey);
+      if (result.status === 'success') {
+        alert('Done. M13 has been deactivated on this machine.\nEnter your key on the new machine to activate.');
+        document.getElementById('licenseInfoModal').hidden = true;
+        location.reload();
+      } else {
+        alert(result.message || 'Transfer failed.');
+      }
+    }
+
+    async function showLicenseInfo() {
+      document.getElementById('licenseInfoModal').hidden = false;
+      const content = document.getElementById('licInfoContent');
+      const info = await window.m13.getLicenseInfo();
+      const { stored, machineId } = info;
+      if (stored && stored.licenseKey) {
+        content.innerHTML = `
+          <div style="margin-bottom:8px"><span style="color:#555;min-width:100px;display:inline-block">Key</span> <span style="font-family:monospace;color:#f0f0f0">${stored.licenseKey}</span></div>
+          <div style="margin-bottom:8px"><span style="color:#555;min-width:100px;display:inline-block">Status</span> <span style="color:#4caf7d">Active</span></div>
+          <div style="margin-bottom:8px"><span style="color:#555;min-width:100px;display:inline-block">Machine ID</span> <span style="font-family:monospace;font-size:0.8rem">${machineId}</span></div>
+          <div style="margin-top:12px;font-size:0.8rem;color:#555">Transfer removes this machine's activation so you can use the same key on a new machine.</div>
+        `;
+      } else {
+        content.innerHTML = '<span style="color:#e05252">No active license on this machine.</span>';
+        document.getElementById('licTransferBtn').disabled = true;
+      }
+    }
+
+    // ── Startup license check ─────────────────────────────────────────────────
+    function dismissSplash() {
+      const splash = document.getElementById('licenseSplash');
+      if (!splash) return;
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 360);
+    }
+
+    (async () => {
+      if (!window.m13) {
+        // Not in Electron (dev browser preview etc.) — just remove splash
+        dismissSplash();
+        return;
+      }
+
+      const result = await window.m13.checkLicense();
+
+      if (result.valid) {
+        // License good — fade splash, app appears underneath
+        window._licModalOpen = false;
+        dismissSplash();
+      } else {
+        // License missing or invalid — show activation modal, then fade splash
+        const modal = document.getElementById('licenseModal');
+        if (modal) modal.style.display = 'flex';
+        window._licModalOpen = true;
+        dismissSplash();
+        setTimeout(() => {
+          const inp = document.getElementById('licKeyInput');
+          if (inp) inp.focus();
+        }, 400);
+      }
+
+      // Wire up menu → license info dialog
+      window.m13.onOpenLicenseInfo(() => showLicenseInfo());
+    })();
+  </script>
+
   <!-- Update notification banner (z-index 60, above drive banner) -->
   <div id="updateBanner" class="update-banner" role="alert" aria-live="polite">
     <div class="update-banner-dot"></div>
@@ -2395,15 +2641,15 @@
 <circle cx="340" cy="340" r="330" fill="#060610"/>
 
 <!-- Outermost rings — brightest ice #c2e8f5 -->
-<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="0.65"/>
-<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="0.15"/>
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.2" stroke-opacity="0.8"/>
 
 <!-- Zodiac band rings — #a8d8ee -->
-<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
-<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
 
 <!-- Zodiac dividers -->
-<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.25">
+<g fill="none" stroke="#a8d8ee" stroke-width="1.0" stroke-opacity="0.65">
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
@@ -2419,7 +2665,7 @@
 </g>
 
 <!-- ARIES -->
-<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
   <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
   <path d="M4,4 C8,0 9,-5 6,-8"/>
@@ -2427,13 +2673,13 @@
 </g></g>
 
 <!-- TAURUS -->
-<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="0" cy="2" r="5"/>
   <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
 </g></g>
 
 <!-- GEMINI -->
-<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-5" y1="-8" x2="-5" y2="8"/>
   <line x1="5" y1="-8" x2="5" y2="8"/>
   <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
@@ -2441,19 +2687,19 @@
 </g></g>
 
 <!-- CANCER -->
-<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
   <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
 </g></g>
 
 <!-- LEO -->
-<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="-1" cy="1" r="4"/>
   <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
 </g></g>
 
 <!-- VIRGO -->
-<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="6"/>
   <line x1="0" y1="-7" x2="0" y2="6"/>
   <line x1="7" y1="-7" x2="7" y2="2"/>
@@ -2463,14 +2709,14 @@
 </g></g>
 
 <!-- LIBRA -->
-<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-8" y1="2" x2="8" y2="2"/>
   <line x1="-8" y1="6" x2="8" y2="6"/>
   <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
 </g></g>
 
 <!-- SCORPIO -->
-<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="4"/>
   <line x1="0" y1="-7" x2="0" y2="4"/>
   <line x1="7" y1="-7" x2="7" y2="0"/>
@@ -2487,7 +2733,7 @@
 </g></g>
 
 <!-- CAPRICORN -->
-<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
   <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
   <line x1="-7" y1="-7" x2="7" y2="-7"/>
@@ -2495,24 +2741,24 @@
 </g></g>
 
 <!-- AQUARIUS -->
-<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
   <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
 </g></g>
 
 <!-- PISCES -->
-<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
   <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
   <line x1="-8" y1="0" x2="8" y2="0"/>
 </g></g>
 
 <!-- Circle of Fifths rings — #8ec4e0 -->
-<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
-<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
 
 <!-- Circle of Fifths dividers -->
-<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.38">
+<g fill="none" stroke="#8ec4e0" stroke-width="1.0" stroke-opacity="0.85">
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
@@ -2542,7 +2788,7 @@
 <text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
 
 <!-- Innermost boundary — deepest ice #7ab0d0 -->
-<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.5"/>
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.0" stroke-opacity="0.9"/>
 
 <!-- Night sky stars — dim gold -->
 <g fill="#c89820" fill-opacity="0.3">
@@ -2602,8 +2848,8 @@
 <line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
 
 <!-- Centre point -->
-<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
-<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.08"/>
+<circle cx="340" cy="340" r="4.5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="10" fill="#f0c040" fill-opacity="0.18"/>
 
 <!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
 <!-- Outer atmosphere glow -->
@@ -2653,13 +2899,14 @@
       </div>
       <button id="browseBtn" class="btn btn-browse" type="button" title="Browse drives and folders" style="display:none">Browse</button>
       <button id="ambientBtn" class="btn btn-ambient" type="button" title="Ambient mode (Esc)">Ambient</button>
-      <button id="playlistToggleBtn" class="btn btn-playlist" type="button" title="Playlist queue">
-        Queue
+      <button id="playlistToggleBtn" class="btn btn-playlist" type="button" title="Set Builder">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="1" y="7" width="5" height="5" rx="1"/><rect x="8" y="7" width="5" height="5" rx="1"/><rect x="4" y="2" width="5" height="5" rx="1"/></svg>
+        Set
         <span id="plBadge" class="pl-badge">0</span>
       </button>
       <button id="refreshBtn" class="btn" type="button">Refresh</button>
       <button id="m8Btn" class="btn btn-m8" type="button" title="Find similar tracks (harmonic + BPM + genre)" style="padding:6px 8px">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="44" style="display:block">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="56" style="display:block">
 
 
 <defs>
@@ -2671,7 +2918,7 @@
   </radialGradient>
   <radialGradient id="moonGlowM8-tb" cx="50%" cy="50%" r="50%">
     <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
-    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.45"/>
   </radialGradient>
 </defs>
 
@@ -2679,15 +2926,15 @@
 <circle cx="340" cy="340" r="330" fill="#060610"/>
 
 <!-- Outermost rings — brightest ice #c2e8f5 -->
-<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="1.0"/>
-<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="2.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
 
 <!-- Zodiac band rings — #a8d8ee -->
-<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
-<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.5" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.5" stroke-opacity="0.85"/>
 
 <!-- Zodiac dividers -->
-<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.6">
+<g fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.65">
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
@@ -2703,7 +2950,7 @@
 </g>
 
 <!-- ARIES -->
-<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
   <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
   <path d="M4,4 C8,0 9,-5 6,-8"/>
@@ -2711,7 +2958,7 @@
 </g></g>
 
 <!-- TAURUS -->
-<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="0" cy="2" r="5"/>
   <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
 </g></g>
@@ -2725,19 +2972,19 @@
 </g></g>
 
 <!-- CANCER -->
-<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
   <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
 </g></g>
 
 <!-- LEO -->
-<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="-1" cy="1" r="4"/>
   <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
 </g></g>
 
 <!-- VIRGO -->
-<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="6"/>
   <line x1="0" y1="-7" x2="0" y2="6"/>
   <line x1="7" y1="-7" x2="7" y2="2"/>
@@ -2747,14 +2994,14 @@
 </g></g>
 
 <!-- LIBRA -->
-<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-8" y1="2" x2="8" y2="2"/>
   <line x1="-8" y1="6" x2="8" y2="6"/>
   <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
 </g></g>
 
 <!-- SCORPIO -->
-<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="4"/>
   <line x1="0" y1="-7" x2="0" y2="4"/>
   <line x1="7" y1="-7" x2="7" y2="0"/>
@@ -2763,7 +3010,7 @@
 </g></g>
 
 <!-- SAGITTARIUS — dimmed, this was M13 launch -->
-<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="7" x2="7" y2="-7"/>
   <line x1="7" y1="-7" x2="2" y2="-7"/>
   <line x1="7" y1="-7" x2="7" y2="-2"/>
@@ -2771,7 +3018,7 @@
 </g></g>
 
 <!-- CAPRICORN -->
-<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
   <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
   <line x1="-7" y1="-7" x2="7" y2="-7"/>
@@ -2779,24 +3026,24 @@
 </g></g>
 
 <!-- AQUARIUS -->
-<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
   <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
 </g></g>
 
 <!-- PISCES -->
-<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
   <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
   <line x1="-8" y1="0" x2="8" y2="0"/>
 </g></g>
 
 <!-- Circle of Fifths rings — #8ec4e0 -->
-<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
-<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="1.0"/>
 
 <!-- Circle of Fifths dividers -->
-<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.85">
+<g fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="0.85">
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
@@ -2826,7 +3073,7 @@
 <text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
 
 <!-- Innermost boundary -->
-<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.5" stroke-opacity="0.9"/>
 
 <!-- Stars — warm gold tones -->
 <g fill="#c89820" fill-opacity="0.65">
@@ -2873,26 +3120,26 @@
 
 <!-- The 8 — M mirrored horizontally -->
 <!-- Top diagonals pointing to centre — bright gold -->
-<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 <!-- Bottom diagonals pointing to centre — bright gold -->
-<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 <!-- Left and right verticals — darker gold -->
-<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 
 <!-- Centre point -->
-<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
-<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.22"/>
+<circle cx="340" cy="340" r="5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="11" fill="#f0c040" fill-opacity="0.28"/>
 
 <!-- Full Moon at 2 degrees Gemini — Vedic sidereal — November 24 2026
      Gemini at 60 degrees on wheel, 2 degrees in = 62 degrees from top
      Placing at radius 175 within star field
      x = 340 + 175*sin(62deg) = 340 + 154.5 = 494
      y = 340 - 175*cos(62deg) = 340 - 82 = 258 -->
-<circle cx="494" cy="258" r="18" fill="url(#moonGlowM8-tb)"/>
-<circle cx="494" cy="258" r="12" fill="url(#moonGradM8-tb)"/>
+<circle cx="494" cy="258" r="22" fill="url(#moonGlowM8-tb)"/>
+<circle cx="494" cy="258" r="15" fill="url(#moonGradM8-tb)"/>
 <ellipse cx="491" cy="253" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.55" transform="rotate(-20,491,253)"/>
 <ellipse cx="497" cy="257" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.5" transform="rotate(15,497,257)"/>
 <ellipse cx="490" cy="261" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.42" transform="rotate(-10,490,261)"/>
@@ -3116,7 +3363,7 @@
         <span id="metadataInfo" class="metadata-info"></span>
       </div>
       <!-- add to queue -->
-      <button id="playerAddToQueueBtn" class="player-add-queue-btn" type="button" title="Add to queue">
+      <button id="playerAddToQueueBtn" class="player-add-queue-btn" type="button" title="Add to Set">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
       <!-- banger -->
@@ -3384,13 +3631,12 @@
     <!-- Playlist drawer -->
     <div id="playlistPanel" class="playlist-panel">
       <div class="playlist-panel-header">
-        <span class="playlist-panel-title">Queue</span>
+        <span class="playlist-panel-title">SET BUILDER</span>
         <span id="plCountBadge" class="playlist-count-badge">0</span>
         <span id="plDurationLabel" class="playlist-duration-label"></span>
         <div class="playlist-header-actions">
-          <button id="plExportBtn" class="playlist-export-btn" type="button" disabled>Export to Folder</button>
-          <button id="plExportM3uBtn" class="playlist-export-btn pl-rb-btn" type="button" disabled title="Import into Rekordbox via File → Import Playlist">M3U</button>
-          <button id="plExportXmlBtn" class="playlist-export-btn pl-rb-btn" type="button" disabled title="Import into Rekordbox via File → Import rekordbox XML">RB XML</button>
+          <button id="plExportBtn" class="playlist-export-btn" type="button" disabled>Export Set</button>
+          <button id="plExportM3uBtn" class="playlist-export-btn pl-rb-btn" type="button" disabled title="Export M3U playlist — import into Rekordbox via File → Import Playlist">♪ Playlist</button>
           <button id="plClearBtn" class="playlist-clear-btn" type="button">Clear</button>
           <button id="plCloseBtn" class="playlist-close-btn" type="button">✕</button>
         </div>
@@ -3406,7 +3652,7 @@
       <div class="m8-panel-header">
         <div class="m8-panel-title-row">
           <div class="m8-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="40" style="display:block;flex-shrink:0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" height="56" style="display:block;flex-shrink:0">
 
 
 <defs>
@@ -3426,15 +3672,15 @@
 <circle cx="340" cy="340" r="330" fill="#060610"/>
 
 <!-- Outermost rings — brightest ice #c2e8f5 -->
-<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="1.0"/>
-<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="2.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
 
 <!-- Zodiac band rings — #a8d8ee -->
-<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
-<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.8"/>
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.5" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.5" stroke-opacity="0.85"/>
 
 <!-- Zodiac dividers -->
-<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.6">
+<g fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.65">
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
   <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
@@ -3450,7 +3696,7 @@
 </g>
 
 <!-- ARIES -->
-<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
   <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
   <path d="M4,4 C8,0 9,-5 6,-8"/>
@@ -3458,7 +3704,7 @@
 </g></g>
 
 <!-- TAURUS -->
-<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="0" cy="2" r="5"/>
   <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
 </g></g>
@@ -3472,19 +3718,19 @@
 </g></g>
 
 <!-- CANCER -->
-<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
   <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
 </g></g>
 
 <!-- LEO -->
-<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <circle cx="-1" cy="1" r="4"/>
   <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
 </g></g>
 
 <!-- VIRGO -->
-<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="6"/>
   <line x1="0" y1="-7" x2="0" y2="6"/>
   <line x1="7" y1="-7" x2="7" y2="2"/>
@@ -3494,14 +3740,14 @@
 </g></g>
 
 <!-- LIBRA -->
-<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-8" y1="2" x2="8" y2="2"/>
   <line x1="-8" y1="6" x2="8" y2="6"/>
   <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
 </g></g>
 
 <!-- SCORPIO -->
-<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="-7" x2="-7" y2="4"/>
   <line x1="0" y1="-7" x2="0" y2="4"/>
   <line x1="7" y1="-7" x2="7" y2="0"/>
@@ -3510,7 +3756,7 @@
 </g></g>
 
 <!-- SAGITTARIUS — dimmed, this was M13 launch -->
-<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="0.65" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <line x1="-7" y1="7" x2="7" y2="-7"/>
   <line x1="7" y1="-7" x2="2" y2="-7"/>
   <line x1="7" y1="-7" x2="7" y2="-2"/>
@@ -3518,7 +3764,7 @@
 </g></g>
 
 <!-- CAPRICORN -->
-<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
   <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
   <line x1="-7" y1="-7" x2="7" y2="-7"/>
@@ -3526,24 +3772,24 @@
 </g></g>
 
 <!-- AQUARIUS -->
-<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
   <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
 </g></g>
 
 <!-- PISCES -->
-<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="2.0" stroke-opacity="1.0" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
   <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
   <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
   <line x1="-8" y1="0" x2="8" y2="0"/>
 </g></g>
 
 <!-- Circle of Fifths rings — #8ec4e0 -->
-<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
-<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="1.0"/>
 
 <!-- Circle of Fifths dividers -->
-<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.85">
+<g fill="none" stroke="#8ec4e0" stroke-width="1.5" stroke-opacity="0.85">
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
   <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
@@ -3573,7 +3819,7 @@
 <text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="1.0" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
 
 <!-- Innermost boundary -->
-<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.5" stroke-opacity="0.9"/>
 
 <!-- Stars — warm gold tones -->
 <g fill="#c89820" fill-opacity="0.65">
@@ -3620,26 +3866,26 @@
 
 <!-- The 8 — M mirrored horizontally -->
 <!-- Top diagonals pointing to centre — bright gold -->
-<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 <!-- Bottom diagonals pointing to centre — bright gold -->
-<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="375" x2="340" y2="340" fill="none" stroke="#f0c040" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 <!-- Left and right verticals — darker gold -->
-<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="292" y2="375" fill="none" stroke="#f0a820" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="375" fill="none" stroke="#f0a820" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
 
 <!-- Centre point -->
-<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
-<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.22"/>
+<circle cx="340" cy="340" r="5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="11" fill="#f0c040" fill-opacity="0.28"/>
 
 <!-- Full Moon at 2 degrees Gemini — Vedic sidereal — November 24 2026
      Gemini at 60 degrees on wheel, 2 degrees in = 62 degrees from top
      Placing at radius 175 within star field
      x = 340 + 175*sin(62deg) = 340 + 154.5 = 494
      y = 340 - 175*cos(62deg) = 340 - 82 = 258 -->
-<circle cx="494" cy="258" r="18" fill="url(#moonGlowM8-ph)"/>
-<circle cx="494" cy="258" r="12" fill="url(#moonGradM8-ph)"/>
+<circle cx="494" cy="258" r="22" fill="url(#moonGlowM8-ph)"/>
+<circle cx="494" cy="258" r="15" fill="url(#moonGradM8-ph)"/>
 <ellipse cx="491" cy="253" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.55" transform="rotate(-20,491,253)"/>
 <ellipse cx="497" cy="257" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.5" transform="rotate(15,497,257)"/>
 <ellipse cx="490" cy="261" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.42" transform="rotate(-10,490,261)"/>
@@ -3650,11 +3896,17 @@
 </svg>
             <span class="m8-beta">Beta</span>
           </div>
-          <button id="m8CloseBtn" class="m8-close" type="button" aria-label="Close">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button id="m8RefreshBtn" type="button" title="Refresh M8 for current track" aria-label="Refresh M8" style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:4px;transition:color 0.15s,background 0.15s" onmouseover="this.style.color='var(--accent)';this.style.background='rgba(240,192,64,0.10)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M11.5 6.5A5 5 0 1 1 6.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 1.5h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Refresh
+            </button>
+            <button id="m8CloseBtn" class="m8-close" type="button" aria-label="Close">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="m8-panel-subtitle">Similar tracks — <span id="m8TrackName" class="m8-track-name"></span></div>
+        <div class="m8-panel-subtitle">Similar tracks — <span id="m8TrackName" class="m8-track-name"></span><span id="m8LockedBadge" hidden style="margin-left:6px;font-size:10px;color:var(--muted);letter-spacing:0.03em;opacity:0.7">● locked</span></div>
       </div>
       <div class="m8-legend">
         <span class="m8-legend-item"><span class="m8-dot m8-dot-key"></span>Harmonic</span>
@@ -3663,6 +3915,67 @@
       </div>
       <div id="m8Results" class="m8-results"></div>
     </aside>
+
+    <!-- Export Success Modal -->
+    <div id="exportSuccessOverlay" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(4,4,12,0.92);align-items:center;justify-content:center;flex-direction:column">
+      <div id="exportSuccessCard" style="background:#13131e;border:1px solid rgba(240,192,64,0.22);border-radius:18px;padding:44px 40px 36px;width:420px;max-width:calc(100vw - 48px);box-shadow:0 40px 100px rgba(0,0,0,0.9),0 0 0 1px rgba(240,192,64,0.06);text-align:center">
+
+        <!-- Checkmark -->
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(74,222,128,0.12);border:2px solid rgba(74,222,128,0.45);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 0 32px rgba(74,222,128,0.15)">
+          <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+            <path d="M6 15.5L12 21.5L24 9" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Title -->
+        <div style="font-size:22px;font-weight:800;color:#f0c040;letter-spacing:-0.02em;margin-bottom:14px">Set Exported!</div>
+
+        <!-- Folder path -->
+        <div id="exportSuccessPath" style="background:#0a0a16;border:1px solid rgba(168,216,238,0.15);border-radius:8px;padding:9px 14px;font-size:11px;color:#a8d8ee;font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;margin-bottom:18px;text-align:left"></div>
+
+        <!-- Message -->
+        <div style="font-size:13px;color:#8a8a9a;line-height:1.65;margin-bottom:28px">Drag the folder into Rekordbox<br>to add your tracks in order.</div>
+
+        <!-- Progress bar -->
+        <div style="height:3px;background:rgba(168,216,238,0.12);border-radius:2px;overflow:hidden;margin-bottom:24px">
+          <div id="exportSuccessBar" style="height:100%;width:0%;background:#a8d8ee;border-radius:2px;transition:none;box-shadow:0 0 8px rgba(168,216,238,0.5)"></div>
+        </div>
+
+        <!-- OK button -->
+        <button id="exportSuccessOk" type="button" style="width:100%;padding:12px;background:#f0c040;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.01em;font-family:inherit;transition:opacity 0.15s" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">OK</button>
+      </div>
+    </div>
+
+    <!-- Export Folder Dialog -->
+    <div id="exportFolderOverlay" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(8,8,16,0.88);align-items:center;justify-content:center;flex-direction:column">
+      <div style="background:#16161f;border:1px solid rgba(255,255,255,0.13);border-radius:14px;padding:30px;width:460px;max-width:calc(100vw - 48px);box-shadow:0 32px 80px rgba(0,0,0,0.8)">
+        <div style="font-size:15px;font-weight:700;color:#f0f0f0;margin-bottom:24px;letter-spacing:-0.01em">Export Set to Folder</div>
+
+        <div style="margin-bottom:16px">
+          <div style="font-size:10px;font-weight:600;color:#666;margin-bottom:7px;letter-spacing:0.08em">SAVE INSIDE</div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div id="efParentDisplay" style="flex:1;background:#0c0c18;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:12px;color:#aaa;font-family:'SF Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:36px;display:flex;align-items:center">No folder selected</div>
+            <button id="efBrowseBtn" type="button" style="padding:0 16px;background:#252535;border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#e0e0e0;font-size:12px;cursor:pointer;white-space:nowrap;height:36px;font-family:inherit">Browse…</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <div style="font-size:10px;font-weight:600;color:#666;margin-bottom:7px;letter-spacing:0.08em">FOLDER NAME</div>
+          <input id="efFolderName" type="text" autocomplete="off" spellcheck="false"
+            style="width:100%;box-sizing:border-box;background:#0c0c18;border:1px solid rgba(255,255,255,0.18);border-radius:8px;padding:8px 12px;font-size:13px;color:#f0f0f0;outline:none;font-family:inherit;height:36px" />
+        </div>
+
+        <div style="margin-bottom:24px">
+          <div style="font-size:10px;font-weight:600;color:#666;margin-bottom:7px;letter-spacing:0.08em">WILL BE CREATED AT</div>
+          <div id="efPathPreview" style="background:#0c0c18;border:1px solid rgba(240,192,64,0.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#f0c040;font-family:'SF Mono',monospace;word-break:break-all;line-height:1.5;min-height:36px">—</div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="efCancelBtn" type="button" style="padding:9px 20px;background:none;border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#aaa;font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+          <button id="efConfirmBtn" type="button" disabled style="padding:9px 20px;background:#f0c040;border:none;border-radius:8px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;opacity:0.35;transition:opacity 0.15s">Create &amp; Export</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Folder copy toast -->
     <div id="folderCopyToast" class="folder-copy-toast" hidden>
@@ -3846,7 +4159,7 @@
       const inBangers = isBanger(track);
       const bangerIndicator = inBangers ? `<span class="banger-indicator" data-banger-path="${track.path}">⚡</span>` : `<span class="banger-indicator" data-banger-path="${track.path}" hidden>⚡</span>`;
       const bangerBtn = `<button class="banger-row-btn${inBangers ? ' is-banger' : ''}" data-banger-path="${track.path}" type="button" title="${inBangers ? 'Remove from Bangers' : 'Add to Bangers'}">⚡</button>`;
-      return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}${bangerIndicator}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions">${bangerBtn}<button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to queue">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
+      return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}${bangerIndicator}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions">${bangerBtn}<button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to Set">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
     }
 
     function renderTracksProgressive(filtered) {
@@ -4107,7 +4420,7 @@
           </div>
           <span class="detail-track-bpm">${t.bpm || '—'}</span>
           <span class="detail-track-key">${t.key || '—'}</span>
-          <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to queue">+</button>
+          <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to Set">+</button>
         </div>`;
       }).join('');
 
@@ -4196,7 +4509,7 @@
             </div>
             <span class="detail-track-bpm">${t.bpm || '—'}</span>
             <span class="detail-track-key">${t.key || '—'}</span>
-            <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to queue">+</button>
+            <button class="detail-track-add${inPl ? ' in-playlist' : ''}" data-pl-path="${t.path}" type="button" title="Add to Set">+</button>
           </div>`;
         }).join('');
         section.appendChild(trackList);
@@ -4287,6 +4600,7 @@
 
     // Cmd+Shift+D: dump debug snapshot to console at any time
     document.addEventListener('keydown', (e) => {
+      if (window._licModalOpen) return;
       if (e.key === 'D' && e.metaKey && e.shiftKey) {
         console.group('[M13 debug snapshot]');
         console.log('tracks.length:', tracks.length);
@@ -4325,6 +4639,7 @@
       playerBar.hidden = false;
       syncPlayerQueueBtn();
       if (typeof syncPlayerBangerBtn === 'function') syncPlayerBangerBtn();
+      if (typeof renderPlaylist === 'function') renderPlaylist();
       playerTitle.textContent = track.name;
       playerSubtitle.textContent = 'Loading metadata…';
       metadataInfo.textContent = 'Artist • BPM • Genre • Key';
@@ -4366,10 +4681,7 @@
       trackTableBody.querySelectorAll('tr.active').forEach(r => r.classList.remove('active'));
       const activeRow = trackTableBody.querySelector(`tr[data-track-path="${CSS.escape(track.path)}"]`);
       if (activeRow) activeRow.classList.add('active');
-      // Re-render M8 panel for new track (direct call, not via play event)
-      if (typeof m8Open !== 'undefined' && m8Open && typeof renderM8Panel === 'function') {
-        renderM8Panel(track);
-      }
+      // M8 panel is not auto-refreshed on preview — use the refresh button in the M8 header.
     }
     function setPlayState(playing) {
       document.getElementById('playIcon').hidden = playing;
@@ -4427,7 +4739,21 @@
     let historyLoaded = false;
     let setTagsCache = new Map(); // filePath → { label, notes }
 
+    const scrollPositions = {};
+
+    function _scrollContainerForView(v) {
+      if (v === 'library' || v === 'raw') return document.getElementById('tableWrap');
+      if (v === 'bangers') return document.getElementById('bangersTableWrap');
+      if (v === 'sets') return document.getElementById('setsTableWrap');
+      if (v === 'history') return document.getElementById('historyTableWrap');
+      return null;
+    }
+
     function switchView(view) {
+      // Save scroll position of the view we're leaving
+      const leaving = _scrollContainerForView(currentView);
+      if (leaving) scrollPositions[currentView] = leaving.scrollTop;
+
       currentView = view;
       const isLibrary = view === 'library';
       const isRaw     = view === 'raw';
@@ -4469,6 +4795,15 @@
       }
       if (isSets && !setsLoaded) refreshSets();
       if (isHistory && !historyLoaded) refreshHistory();
+
+      // Restore scroll position for the view we just entered (deferred so DOM is visible)
+      const savedScroll = scrollPositions[view];
+      if (savedScroll != null) {
+        requestAnimationFrame(() => {
+          const el = _scrollContainerForView(view);
+          if (el) el.scrollTop = savedScroll;
+        });
+      }
     }
 
     function updateRawBadge() {
@@ -4982,7 +5317,7 @@
     document.getElementById('tagSetCancel').addEventListener('click', closeTagSetModal);
     tagSetSave.addEventListener('click', saveTagSet);
     tagSetModal.addEventListener('click', (e) => { if (e.target === tagSetModal) closeTagSetModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !tagSetModal.hidden) closeTagSetModal(); });
+    document.addEventListener('keydown', (e) => { if (window._licModalOpen) return; if (e.key === 'Escape' && !tagSetModal.hidden) closeTagSetModal(); });
     // ─────────────────────────────────────────────────────────────────────────
 
     // ── Match History modal ───────────────────────────────────────────────────
@@ -5089,7 +5424,7 @@
     document.getElementById('mhModalClose').addEventListener('click', closeMatchHistoryModal);
     document.getElementById('mhClose').addEventListener('click', closeMatchHistoryModal);
     matchHistoryModal.addEventListener('click', (e) => { if (e.target === matchHistoryModal) closeMatchHistoryModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !matchHistoryModal.hidden) closeMatchHistoryModal(); });
+    document.addEventListener('keydown', (e) => { if (window._licModalOpen) return; if (e.key === 'Escape' && !matchHistoryModal.hidden) closeMatchHistoryModal(); });
 
     mhCopy.addEventListener('click', () => {
       const session = mhCurrentSession();
@@ -5242,7 +5577,7 @@
     document.getElementById('modalCancel').addEventListener('click', closeMetaModal);
     modalSave.addEventListener('click', saveMetadata);
     metaModal.addEventListener('click', (e) => { if (e.target === metaModal) closeMetaModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !metaModal.hidden) closeMetaModal(); });
+    document.addEventListener('keydown', (e) => { if (window._licModalOpen) return; if (e.key === 'Escape' && !metaModal.hidden) closeMetaModal(); });
     // ─────────────────────────────────────────────────────────────────────────
 
     // ── Transfer / copy ──────────────────────────────────────────────────────
@@ -5408,6 +5743,7 @@
 
     // ── CMD+F → focus search ─────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
+      if (window._licModalOpen) return;
       if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (currentView === 'library') {
@@ -5811,13 +6147,28 @@
     const m8Btn     = document.getElementById('m8Btn');
     const m8Results = document.getElementById('m8Results');
     let m8Open = false;
+    let m8LockedTrack = null;
 
     function closeM8() {
       m8Open = false;
+      m8LockedTrack = null;
       m8Panel.classList.remove('open');
       m8Btn.classList.remove('active');
+      document.getElementById('m8LockedBadge').hidden = true;
     }
     document.getElementById('m8CloseBtn').addEventListener('click', closeM8);
+
+    function m8ShowLocked(track) {
+      m8LockedTrack = track;
+      document.getElementById('m8LockedBadge').hidden = false;
+    }
+
+    document.getElementById('m8RefreshBtn').addEventListener('click', async () => {
+      const source = currentTrack || m8LockedTrack;
+      if (!source) return;
+      m8ShowLocked(source);
+      await renderM8Panel(source);
+    });
 
     function _m8DebugHTML(source) {
       const parsed   = parseCamelot(source.key);
@@ -5888,7 +6239,7 @@
               <div class="m8-tags">${tags}</div>
             </div>
             <div class="m8-score"><div class="m8-score-pips">${pips}</div></div>
-            <button class="m8-add-btn${inQueue ? ' in-queue' : ''}" data-pl-path="${t.path}" title="${inQueue ? 'In queue' : 'Add to queue'}" type="button">+</button>
+            <button class="m8-add-btn${inQueue ? ' in-queue' : ''}" data-pl-path="${t.path}" title="${inQueue ? 'In Set' : 'Add to queue'}" type="button">+</button>
           </div>`;
         }
       }
@@ -5917,7 +6268,7 @@
           if (!t) return;
           addToPlaylist(t);
           btn.classList.add('in-queue');
-          btn.title = 'In queue';
+          btn.title = 'In Set';
         });
       });
 
@@ -5934,7 +6285,6 @@
     m8Btn.addEventListener('click', async () => {
       if (m8Open) { closeM8(); return; }
       if (!currentTrack) {
-        // Flash the button to indicate a track needs to be selected
         m8Btn.style.opacity = '0.5';
         setTimeout(() => { m8Btn.style.opacity = ''; }, 320);
         return;
@@ -5942,6 +6292,7 @@
       m8Open = true;
       m8Panel.classList.add('open');
       m8Btn.classList.add('active');
+      m8ShowLocked(currentTrack);
       await renderM8Panel(currentTrack);
     });
 
@@ -6602,6 +6953,7 @@
 
     // Escape toggles ambient — fires even when an input is focused
     document.addEventListener('keydown', (e) => {
+      if (window._licModalOpen) return;
       if (e.key === 'Escape') {
         if (ambientActive) { exitAmbient(); e.preventDefault(); }
       }
@@ -6634,6 +6986,7 @@
     }
 
     document.addEventListener('keydown', (e) => {
+      if (window._licModalOpen) return;
       // Never intercept when the user is typing in an input or contenteditable
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
@@ -6667,70 +7020,97 @@
       }
     });
 
-    // ── Vinyl scratch easter egg ──────────────────────────────────────────────
+    // ── HPF sweep easter egg ──────────────────────────────────────────────────
     // Sequence: ArrowLeft → ArrowDown → ArrowRight within 800 ms
-    const SCRATCH_SEQ = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
-    let scratchBuf = [];
-    let scratchTimer = null;
+    // Applies a high-pass filter sweep to the live audio: 20Hz → 8kHz → 20Hz over 3s.
+    // The Web Audio node chain is created once and kept alive; the HPF sits at 20Hz
+    // (inaudible) during normal playback and only sweeps on trigger.
+    const HPF_SEQ = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
+    let hpfBuf = [];
+    let hpfSeqTimer = null;
 
-    function playScratch() {
+    let _hpfCtx    = null;  // AudioContext — created once
+    let _hpfFilter = null;  // BiquadFilterNode — persists
+    let _hpfActive = false; // prevents stacking sweeps
+
+    function _ensureHpfChain() {
+      if (_hpfCtx) return true;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+        _hpfCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = _hpfCtx.createMediaElementSource(audioPlayer);
+        _hpfFilter = _hpfCtx.createBiquadFilter();
+        _hpfFilter.type = 'highpass';
+        _hpfFilter.frequency.value = 20;  // transparent at rest
+        _hpfFilter.Q.value = 0.5;
+        src.connect(_hpfFilter);
+        _hpfFilter.connect(_hpfCtx.destination);
+        return true;
+      } catch (_) {
+        _hpfCtx = null;
+        _hpfFilter = null;
+        return false;
+      }
+    }
 
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        // Pitch bend: playback rate sweep simulating a scratch
-        src.playbackRate.setValueAtTime(2.2, ctx.currentTime);
-        src.playbackRate.linearRampToValueAtTime(0.3, ctx.currentTime + 0.15);
-        src.playbackRate.linearRampToValueAtTime(1.6, ctx.currentTime + 0.28);
-        src.playbackRate.linearRampToValueAtTime(0.1, ctx.currentTime + 0.35);
+    function playHpfSweep() {
+      if (!currentTrack || audioPlayer.paused) return;
+      if (_hpfActive) return;
+      if (!_ensureHpfChain()) return;
 
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 2400;
-        filter.Q.value = 1.8;
+      if (_hpfCtx.state === 'suspended') _hpfCtx.resume();
 
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.32, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
+      _hpfActive = true;
+      const now   = _hpfCtx.currentTime;
+      const UP    = 1.5;   // seconds to sweep up
+      const DOWN  = 1.5;   // seconds to sweep back
 
-        src.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        src.start();
-        src.onended = () => ctx.close();
-      } catch (_) {}
+      _hpfFilter.frequency.cancelScheduledValues(now);
+      _hpfFilter.frequency.setValueAtTime(20, now);
+      _hpfFilter.frequency.exponentialRampToValueAtTime(8000, now + UP);
+      _hpfFilter.frequency.exponentialRampToValueAtTime(20,   now + UP + DOWN);
 
-      // Visual flash on player bar
+      // Visual: HPF label on player bar
       const bar = document.getElementById('playerBar');
       if (bar) {
-        bar.style.transition = 'box-shadow 0.08s';
-        bar.style.boxShadow = '0 0 0 2px rgba(168,216,238,0.7), 0 0 32px rgba(168,216,238,0.25)';
-        setTimeout(() => { bar.style.boxShadow = ''; }, 320);
+        const existing = document.getElementById('hpfLabel');
+        if (existing) existing.remove();
+        const lbl = document.createElement('div');
+        lbl.id = 'hpfLabel';
+        lbl.textContent = 'HPF ↑';
+        lbl.style.cssText = [
+          'position:absolute', 'right:14px', 'top:50%', 'transform:translateY(-50%)',
+          'font-size:0.68rem', 'font-weight:700', 'letter-spacing:0.1em',
+          'color:#a8d8ee', 'opacity:1', 'transition:opacity 0.5s',
+          'pointer-events:none', 'font-family:monospace',
+        ].join(';');
+        if (getComputedStyle(bar).position === 'static') bar.style.position = 'relative';
+        bar.appendChild(lbl);
+        setTimeout(() => { if (lbl.parentNode) lbl.textContent = 'HPF ↓'; }, UP * 1000);
+        setTimeout(() => { lbl.style.opacity = '0'; },        (UP + DOWN - 0.5) * 1000);
+        setTimeout(() => { if (lbl.parentNode) lbl.remove(); _hpfActive = false; }, (UP + DOWN + 0.1) * 1000);
+      } else {
+        setTimeout(() => { _hpfActive = false; }, (UP + DOWN + 0.1) * 1000);
       }
     }
 
     document.addEventListener('keydown', (e) => {
-      if (['ArrowLeft','ArrowDown','ArrowRight'].includes(e.key)) {
-        const expected = SCRATCH_SEQ[scratchBuf.length];
-        if (e.key === expected) {
-          scratchBuf.push(e.key);
-          if (scratchTimer) clearTimeout(scratchTimer);
-          if (scratchBuf.length === SCRATCH_SEQ.length) {
-            scratchBuf = [];
-            playScratch();
-          } else {
-            scratchTimer = setTimeout(() => { scratchBuf = []; }, 800);
-          }
+      if (window._licModalOpen) return;
+      // All three steps require Shift — no conflict with the plain-arrow seek shortcuts
+      if (!e.shiftKey || !['ArrowLeft','ArrowDown','ArrowRight'].includes(e.key)) return;
+      const expected = HPF_SEQ[hpfBuf.length];
+      if (e.key === expected) {
+        hpfBuf.push(e.key);
+        if (hpfSeqTimer) clearTimeout(hpfSeqTimer);
+        if (hpfBuf.length === HPF_SEQ.length) {
+          hpfBuf = [];
+          playHpfSweep();
         } else {
-          // Wrong key — reset and check if this key starts a new sequence
-          scratchBuf = e.key === SCRATCH_SEQ[0] ? [e.key] : [];
-          if (scratchTimer) clearTimeout(scratchTimer);
-          if (scratchBuf.length) scratchTimer = setTimeout(() => { scratchBuf = []; }, 800);
+          hpfSeqTimer = setTimeout(() => { hpfBuf = []; }, 800);
         }
+      } else {
+        hpfBuf = e.key === HPF_SEQ[0] ? [e.key] : [];
+        if (hpfSeqTimer) clearTimeout(hpfSeqTimer);
+        if (hpfBuf.length) hpfSeqTimer = setTimeout(() => { hpfBuf = []; }, 800);
       }
     });
 
@@ -6746,6 +7126,110 @@
     const plCloseBtn        = document.getElementById('plCloseBtn');
     const playlistToggleBtn = document.getElementById('playlistToggleBtn');
     const plBadge           = document.getElementById('plBadge');
+
+    // ── Queue reorder — mouse-event based, no HTML5 DnD API ─────────────────
+    let _plDragFromIdx = null;  // index being dragged
+    let _plDropToIdx   = null;  // insert-before index (0..n)
+
+    // Floating gold line that shows the drop position
+    const _plDropLine = (() => {
+      const el = document.createElement('div');
+      el.style.cssText = [
+        'position:fixed', 'left:0', 'right:0', 'height:2px',
+        'background:#f0c040', 'pointer-events:none', 'z-index:9999',
+        'display:none', 'border-radius:1px',
+        'box-shadow:0 0 6px rgba(240,192,64,0.7)',
+      ].join(';');
+      document.body.appendChild(el);
+      return el;
+    })();
+
+    function _plGetRows() {
+      return [...plBody.querySelectorAll('.playlist-item')];
+    }
+
+    // Given a clientY, return the insert-before index (0 = before first, n = after last)
+    function _plInsertIdxForY(clientY) {
+      const rows = _plGetRows();
+      for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) return i;
+      }
+      return rows.length;
+    }
+
+    function _plShowDropLine(insertIdx) {
+      const rows = _plGetRows();
+      let y;
+      if (rows.length === 0) { _plDropLine.style.display = 'none'; return; }
+      if (insertIdx <= 0) {
+        y = rows[0].getBoundingClientRect().top;
+      } else if (insertIdx >= rows.length) {
+        const r = rows[rows.length - 1].getBoundingClientRect();
+        y = r.bottom;
+      } else {
+        const above = rows[insertIdx - 1].getBoundingClientRect().bottom;
+        const below = rows[insertIdx].getBoundingClientRect().top;
+        y = (above + below) / 2;
+      }
+      const bodyRect = plBody.getBoundingClientRect();
+      _plDropLine.style.left  = bodyRect.left + 'px';
+      _plDropLine.style.width = bodyRect.width + 'px';
+      _plDropLine.style.top   = (y - 1) + 'px';
+      _plDropLine.style.display = 'block';
+    }
+
+    function _plEndDrag() {
+      _plDropLine.style.display = 'none';
+      if (_plDragFromIdx !== null) {
+        _plGetRows()[_plDragFromIdx]?.classList.remove('pl-dragging');
+      }
+      _plDragFromIdx = null;
+      _plDropToIdx   = null;
+      document.removeEventListener('mousemove', _plOnMouseMove);
+      document.removeEventListener('mouseup',   _plOnMouseUp);
+    }
+
+    function _plOnMouseMove(e) {
+      if (_plDragFromIdx === null) return;
+      _plDropToIdx = _plInsertIdxForY(e.clientY);
+      _plShowDropLine(_plDropToIdx);
+    }
+
+    function _plOnMouseUp(e) {
+      if (_plDragFromIdx === null) { _plEndDrag(); return; }
+      const fromIdx  = _plDragFromIdx;
+      const insertAt = _plDropToIdx ?? fromIdx;
+      _plEndDrag();
+
+      // insertAt is insert-before index; adjust for the removal of fromIdx
+      let dest = insertAt;
+      if (dest > fromIdx) dest -= 1;  // removal shifts everything after fromIdx down by 1
+      if (dest === fromIdx) return;   // no change
+
+      const moved = playlist.splice(fromIdx, 1)[0];
+      playlist.splice(dest, 0, moved);
+      console.log('[M13] Reorder complete — new order:', playlist.map(t => t.name));
+      renderPlaylist();
+    }
+
+    // Wire mousedown on handles — delegated from plBody so it works after re-renders
+    plBody.addEventListener('mousedown', (e) => {
+      const handle = e.target.closest('.pl-drag-handle');
+      if (!handle) return;
+      const row = handle.closest('.playlist-item');
+      if (!row) return;
+      e.preventDefault(); // prevent text selection during drag
+
+      const idx = parseInt(row.dataset.plIdx, 10);
+      _plDragFromIdx = idx;
+      _plDropToIdx   = idx;
+      row.classList.add('pl-dragging');
+      console.log('[M13] Drag started for track index:', idx);
+
+      document.addEventListener('mousemove', _plOnMouseMove);
+      document.addEventListener('mouseup',   _plOnMouseUp);
+    });
 
     function formatHMS(seconds) {
       if (!seconds || isNaN(seconds)) return null;
@@ -6769,7 +7253,6 @@
 
       plExportBtn.disabled = n === 0;
       document.getElementById('plExportM3uBtn').disabled = n === 0;
-      document.getElementById('plExportXmlBtn').disabled = n === 0;
 
       if (n === 0) {
         plBody.innerHTML = '<div class="playlist-empty">Add tracks with the <strong style="color:var(--accent)">+</strong> button</div>';
@@ -6778,12 +7261,14 @@
 
       plBody.innerHTML = playlist.map((t, i) => {
         const cachedArt = artworkCache.get(t.path);
+        const isPlaying = currentTrack && currentTrack.path === t.path;
         const artHtml = cachedArt
           ? `<img class="playlist-item-art" src="${cachedArt}" alt="" />`
           : `<div class="playlist-item-art"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div>`;
         const meta = [t.artist, t.bpm ? `${t.bpm} BPM` : null, t.key].filter(Boolean).join(' · ');
-        return `<div class="playlist-item" data-pl-idx="${i}">
-          <span class="playlist-item-num">${i + 1}</span>
+        return `<div class="playlist-item${isPlaying ? ' pl-playing' : ''}" data-pl-idx="${i}" data-pl-path="${t.path}" style="cursor:pointer">
+          <span class="pl-drag-handle" title="Drag to reorder">⠿</span>
+          <span class="playlist-item-num">${isPlaying ? '▶' : i + 1}</span>
           ${artHtml}
           <div class="playlist-item-info">
             <div class="playlist-item-name">${t.name}</div>
@@ -6800,9 +7285,21 @@
           const idx = parseInt(btn.dataset.removeIdx, 10);
           playlist.splice(idx, 1);
           renderPlaylist();
-          renderTracks(tracks); // refresh + button state in table
+          renderTracks(tracks);
         });
       });
+
+      // Wire click-to-play on each item row (but not on remove button or drag handle)
+      plBody.querySelectorAll('.playlist-item').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.playlist-item-remove') || e.target.closest('.pl-drag-handle')) return;
+          const p = row.dataset.plPath;
+          const track = playlist.find(t => t.path === p);
+          if (track) playTrack(track);
+        });
+      });
+
+      // Drag-and-drop is handled by module-scope delegation on plBody (above renderPlaylist).
 
       // Lazy-load artwork for new items
       playlist.forEach(t => {
@@ -6842,7 +7339,7 @@
       if (!currentTrack) return;
       const inQueue = playlist.some(t => t.path === currentTrack.path);
       playerAddToQueueBtn.classList.toggle('in-queue', inQueue);
-      playerAddToQueueBtn.title = inQueue ? 'Already in queue' : 'Add to queue';
+      playerAddToQueueBtn.title = inQueue ? 'Already in Set' : 'Add to queue';
     }
 
     function syncPlayerBangerBtn() {
@@ -6977,16 +7474,6 @@
       });
     });
 
-    document.getElementById('plExportXmlBtn').addEventListener('click', async () => {
-      if (playlist.length === 0) return;
-      await exportPlaylistFile({
-        content:     buildRekordboxXML(playlist),
-        defaultName: `M13 Queue ${todayStamp()}.xml`,
-        filters:     [{ name: 'Rekordbox XML', extensions: ['xml'] }],
-        label:       'Rekordbox XML',
-      });
-    });
-
     plCloseBtn.addEventListener('click', closePlaylist);
 
     plClearBtn.addEventListener('click', () => {
@@ -6995,27 +7482,120 @@
       renderTracks(tracks);
     });
 
-    // Export playlist — pick a dest folder then copy each track into it
-    plExportBtn.addEventListener('click', async () => {
-      if (playlist.length === 0) return;
-      const dest = await window.m13.selectDestFolder();
-      if (!dest) return;
+    // ── Export Success Modal ─────────────────────────────────────────────────
+    const exportSuccessOverlay = document.getElementById('exportSuccessOverlay');
+    const exportSuccessBar     = document.getElementById('exportSuccessBar');
+    const exportSuccessPath    = document.getElementById('exportSuccessPath');
+    let _exportSuccessTimer    = null;
+
+    function showExportSuccess(folderPath) {
+      exportSuccessPath.textContent = folderPath;
+      exportSuccessBar.style.transition = 'none';
+      exportSuccessBar.style.width = '0%';
+      exportSuccessOverlay.style.display = 'flex';
+
+      // Kick off the progress bar fill over 5 seconds
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          exportSuccessBar.style.transition = 'width 5s linear';
+          exportSuccessBar.style.width = '100%';
+        });
+      });
+
+      if (_exportSuccessTimer) clearTimeout(_exportSuccessTimer);
+      _exportSuccessTimer = setTimeout(() => dismissExportSuccess(), 5000);
+    }
+
+    function dismissExportSuccess() {
+      if (_exportSuccessTimer) { clearTimeout(_exportSuccessTimer); _exportSuccessTimer = null; }
+      exportSuccessOverlay.style.display = 'none';
+      exportSuccessBar.style.transition = 'none';
+      exportSuccessBar.style.width = '0%';
+    }
+
+    document.getElementById('exportSuccessOk').addEventListener('click', dismissExportSuccess);
+    exportSuccessOverlay.addEventListener('click', (e) => {
+      if (e.target === exportSuccessOverlay) dismissExportSuccess();
+    });
+
+    // ── Export Folder Dialog ─────────────────────────────────────────────────
+    const exportFolderOverlay = document.getElementById('exportFolderOverlay');
+    const efParentDisplay     = document.getElementById('efParentDisplay');
+    const efFolderNameInput   = document.getElementById('efFolderName');
+    const efPathPreview       = document.getElementById('efPathPreview');
+    const efConfirmBtn        = document.getElementById('efConfirmBtn');
+    let _efParentPath         = null;
+
+    function efUpdatePreview() {
+      const name = efFolderNameInput.value.trim();
+      if (_efParentPath && name) {
+        efPathPreview.textContent = _efParentPath + '/' + name;
+        efConfirmBtn.disabled = false;
+        efConfirmBtn.style.opacity = '1';
+      } else {
+        efPathPreview.textContent = '—';
+        efConfirmBtn.disabled = true;
+        efConfirmBtn.style.opacity = '0.4';
+      }
+    }
+
+    function efOpen() {
+      const stamp = new Date().toISOString().slice(0, 10);
+      efFolderNameInput.value = `M13 Set ${stamp}`;
+      _efParentPath = null;
+      efParentDisplay.textContent = 'No folder selected';
+      efUpdatePreview();
+      exportFolderOverlay.style.display = 'flex';
+      window._licModalOpen = true;
+      setTimeout(() => { efFolderNameInput.focus(); efFolderNameInput.select(); }, 80);
+    }
+
+    function efClose() {
+      exportFolderOverlay.style.display = 'none';
+      window._licModalOpen = false;
+    }
+
+    document.getElementById('efCancelBtn').addEventListener('click', efClose);
+    exportFolderOverlay.addEventListener('click', (e) => { if (e.target === exportFolderOverlay) efClose(); });
+
+    document.getElementById('efBrowseBtn').addEventListener('click', async () => {
+      const picked = await window.m13.selectDestFolder();
+      if (!picked) return;
+      _efParentPath = picked;
+      efParentDisplay.textContent = picked;
+      efUpdatePreview();
+    });
+
+    efFolderNameInput.addEventListener('input', efUpdatePreview);
+
+    efConfirmBtn.addEventListener('click', async () => {
+      const name = efFolderNameInput.value.trim();
+      if (!_efParentPath || !name) return;
+
+      efClose();
+
+      const dest = await window.m13.ensureExportFolder(_efParentPath, name);
+      if (!dest) { alert('Could not create export folder.'); return; }
 
       plExportBtn.disabled = true;
       plExportBtn.textContent = 'Exporting…';
 
       let done = 0;
-      for (const t of playlist) {
-        await window.m13.copyTrack(t.path, dest);
+      for (let i = 0; i < playlist.length; i++) {
+        const t = playlist[i];
+        await window.m13.copyTrackNumbered(t.path, dest, i + 1, t.name);
         done++;
         plExportBtn.textContent = `Exporting… ${done}/${playlist.length}`;
       }
 
-      plExportBtn.textContent = `✓ Exported ${done} tracks`;
-      setTimeout(() => {
-        plExportBtn.disabled = playlist.length === 0;
-        plExportBtn.textContent = 'Export to Folder';
-      }, 3000);
+      plExportBtn.disabled = playlist.length === 0;
+      plExportBtn.textContent = 'Export Set';
+      showExportSuccess(dest);
+    });
+
+    plExportBtn.addEventListener('click', () => {
+      if (playlist.length === 0) return;
+      efOpen();
     });
   </script>
 </body>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, dialog, ipcMain, session } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, net } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const http = require('http');
@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const url = require('url');
 const { Transform } = require('stream');
+const crypto = require('crypto');
 
 // music-metadata is an ESM package whose CJS `require` entry resolves (in
 // Electron's main process) to a stub that only exposes `loadMusicMetadata`,
@@ -20,6 +21,75 @@ function getMusicMetadata() {
 }
 
 const AUDIO_EXTENSIONS = new Set(['.aif', '.aiff', '.mp3', '.wav', '.flac', '.m4a']);
+
+// ── License system ─────────────────────────────────────────────────────────────
+
+const LICENSE_API = 'https://m13app.com/.netlify/functions/license';
+
+function getMachineId() {
+  const raw = [os.hostname(), os.cpus()[0]?.model || 'unknown', os.platform(), os.arch()].join('|');
+  return crypto.createHash('sha256').update(raw).digest('hex').slice(0, 32);
+}
+
+function getLicensePath() {
+  return path.join(app.getPath('userData'), 'license.json');
+}
+
+function readStoredLicense() {
+  try {
+    const data = fs.readFileSync(getLicensePath(), 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLicense(licenseKey, existingVerifiedAt) {
+  const machineId = getMachineId();
+  const now = new Date().toISOString();
+  fs.writeFileSync(
+    getLicensePath(),
+    JSON.stringify({
+      licenseKey,
+      machineId,
+      storedAt: now,
+      lastVerifiedAt: existingVerifiedAt || now,
+    }),
+    'utf8'
+  );
+}
+
+function clearStoredLicense() {
+  try { fs.unlinkSync(getLicensePath()); } catch { /* ignore */ }
+}
+
+function updateLastVerified() {
+  const stored = readStoredLicense();
+  if (!stored) return;
+  stored.lastVerifiedAt = new Date().toISOString();
+  fs.writeFileSync(getLicensePath(), JSON.stringify(stored), 'utf8');
+}
+
+const VERIFY_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function needsOnlineVerification(stored) {
+  if (!stored.lastVerifiedAt) return true;
+  return Date.now() - new Date(stored.lastVerifiedAt).getTime() > VERIFY_INTERVAL_MS;
+}
+
+async function verifyLicenseOnline(licenseKey, machineId) {
+  try {
+    const res = await net.fetch(LICENSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check', licenseKey, machineId }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null; // offline or server unreachable
+  }
+}
 
 // Electron's bundled Chromium has no AIFF demuxer (canPlayType('audio/aiff') === '').
 // AIFF is almost always uncompressed big-endian PCM, so we remux it into a
@@ -389,6 +459,27 @@ function buildMenu() {
         { role: 'minimize' },
         { role: 'zoom' },
         ...(isMac ? [{ type: 'separator' }, { role: 'front' }] : []),
+      ],
+    },
+    {
+      label: 'License',
+      submenu: [
+        {
+          label: 'License Status…',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('open-license-info');
+            }
+          },
+        },
+        {
+          label: 'Transfer to New Machine…',
+          click: () => shell.openExternal('https://m13app.com/license/'),
+        },
+        {
+          label: 'Manage License Online…',
+          click: () => shell.openExternal('https://m13app.com/license/'),
+        },
       ],
     },
     {
@@ -955,6 +1046,54 @@ ipcMain.handle('copy-track', (event, { srcPath, destFolder }) => {
 
     srcStream.pipe(destStream);
   });
+});
+
+// Create a named subfolder inside parent (if it doesn't already exist), return its path.
+ipcMain.handle('ensure-export-folder', (event, { parent, folderName }) => {
+  try {
+    const dest = path.join(parent, folderName);
+    fs.mkdirSync(dest, { recursive: true });
+    return dest;
+  } catch (err) {
+    console.error('ensure-export-folder error:', err);
+    return null;
+  }
+});
+
+// Copy track to dest folder with a numbered prefix filename.
+// AIFF/WAV: rename only — never touch the audio data (node-id3 corrupts these).
+// MP3: rename + write trackNumber ID3 tag to the copy.
+ipcMain.handle('copy-track-numbered', (event, { srcPath, destFolder, trackNumber }) => {
+  if (!srcPath || !fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) {
+    return { success: false, error: 'Source file not found.' };
+  }
+  if (!destFolder || !fs.existsSync(destFolder) || !fs.statSync(destFolder).isDirectory()) {
+    return { success: false, error: 'Destination folder not found.' };
+  }
+
+  const padded   = String(trackNumber).padStart(2, '0');
+  const origName = path.basename(srcPath);
+  const ext      = path.extname(origName).toLowerCase();
+  const baseName = path.basename(origName, path.extname(origName));
+  const newName  = `${padded} - ${baseName}${ext}`;
+  const destPath = path.join(destFolder, newName);
+
+  // Step 1 — byte-perfect copy, preserving every embedded tag and audio frame
+  fs.copyFileSync(srcPath, destPath);
+
+  // Step 2 — MP3 only: write trackNumber tag to the copy
+  // AIFF and WAV are left untouched — the prefixed filename provides the order
+  if (ext === '.mp3') {
+    try {
+      const result = NodeID3.update({ trackNumber: padded }, destPath);
+      if (result instanceof Error) throw result;
+    } catch (err) {
+      console.warn('[M13] copy-track-numbered: ID3 write failed for', newName, err.message);
+    }
+  }
+
+  console.log('[M13] Exported:', newName);
+  return { success: true, destPath, filename: newName };
 });
 
 // ── Pioneer rekordbox PDB history parser ──────────────────────────────────────
@@ -1953,4 +2092,89 @@ ipcMain.handle('export-set', (event, { srcPath, destFolder, setName, tags }) => 
 
     srcStream.pipe(destStream);
   });
+});
+
+// ── License IPC handlers ──────────────────────────────────────────────────────
+
+ipcMain.handle('get-machine-id', () => getMachineId());
+
+ipcMain.handle('get-license-info', () => {
+  const stored = readStoredLicense();
+  const machineId = getMachineId();
+  return { stored, machineId };
+});
+
+ipcMain.handle('check-license', async () => {
+  const machineId = getMachineId();
+  const stored = readStoredLicense();
+
+  // No license file at all
+  if (!stored || !stored.licenseKey) return { valid: false, reason: 'no-license' };
+
+  // Machine ID mismatch — different hardware, must re-activate
+  if (stored.machineId !== machineId) {
+    clearStoredLicense();
+    return { valid: false, reason: 'wrong-machine' };
+  }
+
+  // Machine matches — valid locally. Check online only if 7 days have passed.
+  if (!needsOnlineVerification(stored)) {
+    return { valid: true, licenseKey: stored.licenseKey };
+  }
+
+  // Time for a background online check — but don't block the user if it fails
+  const online = await verifyLicenseOnline(stored.licenseKey, machineId);
+  if (online) {
+    if (online.status === 'valid' || online.status === 'already-active') {
+      updateLastVerified();
+      return { valid: true, licenseKey: stored.licenseKey };
+    }
+    if (online.status === 'wrong-machine') { clearStoredLicense(); return { valid: false, reason: 'wrong-machine' }; }
+    if (online.status === 'invalid') { clearStoredLicense(); return { valid: false, reason: 'invalid' }; }
+  }
+
+  // Server unreachable — grace period: trust the local file
+  return { valid: true, licenseKey: stored.licenseKey, offline: true };
+});
+
+ipcMain.handle('activate-license', async (_event, licenseKey) => {
+  const machineId = getMachineId();
+  try {
+    const res = await net.fetch(LICENSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'activate', licenseKey, machineId }),
+    });
+    if (!res.ok) return { success: false, status: 'server-error', message: `Server error ${res.status}. Try again shortly.` };
+    const data = await res.json();
+
+    if (data.status === 'success' || data.status === 'already-active') {
+      writeStoredLicense(licenseKey, new Date().toISOString());
+      return { success: true };
+    }
+    return { success: false, status: data.status, message: data.message };
+  } catch (err) {
+    const msg = err && err.message ? err.message : '';
+    if (msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED') || msg.includes('ERR_NAME_NOT_RESOLVED')) {
+      return { success: false, status: 'offline', message: 'Could not reach activation server. Check your connection and try again.' };
+    }
+    return { success: false, status: 'server-error', message: 'Activation server unavailable. Try again shortly.' };
+  }
+});
+
+ipcMain.handle('transfer-license', async (_event, licenseKey) => {
+  const machineId = getMachineId();
+  try {
+    const res = await net.fetch(LICENSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'transfer', licenseKey, machineId }),
+    });
+    if (!res.ok) return { status: 'server-error', message: `Server error ${res.status}.` };
+    const data = await res.json();
+    if (data.status === 'success') clearStoredLicense();
+    return data;
+  } catch {
+    return { status: 'server-error', message: 'Could not reach server. Try again.' };
+  }
 });

@@ -39,6 +39,8 @@ contextBridge.exposeInMainWorld('m13', {
   },
   selectDestFolder: () => ipcRenderer.invoke('select-dest-folder'),
   copyTrack: (srcPath, destFolder) => ipcRenderer.invoke('copy-track', { srcPath, destFolder }),
+  copyTrackNumbered: (srcPath, destFolder, trackNumber, title) => ipcRenderer.invoke('copy-track-numbered', { srcPath, destFolder, trackNumber, title }),
+  ensureExportFolder: (parent, folderName) => ipcRenderer.invoke('ensure-export-folder', { parent, folderName }),
   onCopyProgress: (callback) => {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('copy-progress', handler);
@@ -77,4 +79,14 @@ contextBridge.exposeInMainWorld('m13', {
   },
   loadBangers: () => ipcRenderer.invoke('load-bangers'),
   saveBangers: (bangers) => ipcRenderer.invoke('save-bangers', bangers),
+  getMachineId: () => ipcRenderer.invoke('get-machine-id'),
+  getLicenseInfo: () => ipcRenderer.invoke('get-license-info'),
+  checkLicense: () => ipcRenderer.invoke('check-license'),
+  activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
+  transferLicense: (key) => ipcRenderer.invoke('transfer-license', key),
+  onOpenLicenseInfo: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('open-license-info', handler);
+    return () => ipcRenderer.removeListener('open-license-info', handler);
+  },
 });

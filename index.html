@@ -89,12 +89,15 @@
     .toolbar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
+      gap: 6px;
+      padding: 8px 16px;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
       flex-shrink: 0;
+      flex-wrap: wrap;
+      min-width: 0;
     }
+    .toolbar-spacer { flex: 1; min-width: 8px; }
 
     /* ── Buttons ───────────────────────────────────────────────────────────── */
     .btn {
@@ -139,11 +142,12 @@
 
     /* ── Search ────────────────────────────────────────────────────────────── */
     .search-box {
-      flex: 1;
+      flex: 1 1 200px;
       display: flex;
       align-items: center;
       gap: 8px;
-      min-width: 240px;
+      min-width: 160px;
+      max-width: 560px;
       height: 32px;
       padding: 0 12px;
       border: 1px solid var(--border);
@@ -277,7 +281,13 @@
     .empty-state p { margin: 0 0 20px; color: var(--muted); max-width: 420px; line-height: 1.6; font-size: 13px; }
 
     /* ── Table ─────────────────────────────────────────────────────────────── */
-    .table-wrap { overflow: auto; scroll-behavior: auto; overflow-anchor: none; }
+    .table-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(100vh - 230px);
+      scroll-behavior: auto;
+      overflow-anchor: none;
+    }
     .table-wrap tbody tr { overflow-anchor: none; }
     table { width: 100%; border-collapse: collapse; min-width: 720px; }
     th, td {
@@ -285,36 +295,47 @@
       height: 44px;
       text-align: left;
       border-bottom: 1px solid var(--border);
+      border-right: 1px solid rgba(168, 216, 238, 0.1);
       font-size: 12.5px;
       vertical-align: middle;
+    }
+    td:last-child { border-right: none; }
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #0a0a14;
     }
     th {
       height: 36px;
       color: var(--muted);
-      background: var(--surface-2);
+      background: #0a0a14;
       border-bottom: 1px solid var(--border-2);
+      border-right: 1px solid rgba(168, 216, 238, 0.35);
       text-transform: uppercase;
       letter-spacing: 0.07em;
       font-size: 10.5px;
       font-weight: 700;
-      position: sticky;
-      top: 0;
-      z-index: 1;
       overflow: hidden;
       white-space: nowrap;
       user-select: none;
     }
+    th:last-child { border-right: none; }
+    th:hover { border-right-color: rgba(168, 216, 238, 0.7); }
     th .col-resize-handle {
       position: absolute;
       right: 0; top: 0; bottom: 0;
-      width: 6px;
+      width: 4px;
       cursor: col-resize;
       background: transparent;
       z-index: 2;
+      transition: background 0.1s;
     }
-    th .col-resize-handle:hover,
+    th .col-resize-handle:hover {
+      background: rgba(168, 216, 238, 0.4);
+    }
     th .col-resize-handle.dragging {
-      background: rgba(240,192,64,0.35);
+      background: #a8d8ee;
     }
     tbody tr {
       transition: background var(--t);
@@ -411,8 +432,9 @@
     }
 
     /* key + folder column sizing */
-    .key-cell { width: 60px; font-variant-numeric: tabular-nums; }
-    .folder-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .key-cell  { width: 60px; font-variant-numeric: tabular-nums; }
+    .time-cell { width: 52px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .folder-cell { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* ── Row action buttons (copy + add to playlist) ──────────────────────── */
     td.copy-cell { width: 80px; padding: 0 10px; text-align: right; }
@@ -1899,11 +1921,11 @@
       z-index: 2;
     }
     .ambient-m13-logo {
-      font-size: 18px;
-      font-weight: 900;
-      color: rgba(240,192,64,0.18);
-      letter-spacing: -0.05em;
+      width: 52px;
+      height: 52px;
+      opacity: 0.85;
       user-select: none;
+      flex-shrink: 0;
     }
     .ambient-clock-wrap {
       position: absolute;
@@ -1932,15 +1954,13 @@
 
     /* No-track idle state */
     .ambient-idle-logo {
-      font-size: 72px;
-      font-weight: 900;
-      color: rgba(240,192,64,0.12);
-      letter-spacing: -0.06em;
+      width: 220px;
+      height: 220px;
       user-select: none;
       animation: ambient-breathe 4s ease-in-out infinite;
     }
     @keyframes ambient-breathe {
-      0%, 100% { opacity: 0.12; }
+      0%, 100% { opacity: 0.55; }
       50%       { opacity: 0.22; }
     }
 
@@ -2370,11 +2390,257 @@
     transition:opacity 0.35s ease;
     pointer-events:none;
   ">
-    <svg viewBox="0 0 200 60" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
-      <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle"
-        font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="48"
-        letter-spacing="-3" fill="#f0c040">M13</text>
-    </svg>
+    <div style="width:140px;height:140px;"><svg style="width:140px;height:140px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" style="display:block;flex-shrink:0">
+
+
+<defs>
+  <radialGradient id="moonGrad-splash" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlow-splash" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.15"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.2" stroke-opacity="0.8"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="1.0" stroke-opacity="0.65">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — white highlighted, launch date marker -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="1.0" stroke-opacity="0.85">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary — deepest ice #7ab0d0 -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.0" stroke-opacity="0.9"/>
+
+<!-- Night sky stars — dim gold -->
+<g fill="#c89820" fill-opacity="0.3">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+
+<!-- Mid stars — warm gold -->
+<g fill="#ffd060" fill-opacity="0.45">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+
+<!-- Bright warm stars -->
+<g fill="#ffe8a0" fill-opacity="0.65">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+
+<!-- Brightest white stars -->
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+
+<!-- Star sparkles -->
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.4" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- Golden M — left/right verticals bright gold, diagonals darker gold -->
+<line x1="292" y1="378" x2="292" y2="305" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="378" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="4.5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="10" fill="#f0c040" fill-opacity="0.18"/>
+
+<!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
+<!-- Outer atmosphere glow -->
+<circle cx="210" cy="375" r="20" fill="url(#moonGlow-splash)"/>
+<!-- Moon sphere with realistic radial gradient shading -->
+<circle cx="210" cy="375" r="12" fill="url(#moonGrad-splash)"/>
+<!-- Mare — dark surface patches -->
+<ellipse cx="207" cy="370" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.35" transform="rotate(-20,207,370)"/>
+<ellipse cx="213" cy="374" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.28" transform="rotate(15,213,374)"/>
+<ellipse cx="206" cy="378" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.22" transform="rotate(-10,206,378)"/>
+<ellipse cx="215" cy="369" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.2"/>
+<ellipse cx="209" cy="381" rx="1.8" ry="1.2" fill="#8a7a50" fill-opacity="0.18" transform="rotate(25,209,381)"/>
+<!-- Crater rings -->
+<circle cx="204" cy="372" r="1.2" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.3"/>
+<circle cx="214" cy="377" r="0.9" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.25"/>
+<circle cx="208" cy="380" r="0.7" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.2"/>
+<!-- Moon edge -->
+<circle cx="210" cy="375" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.3"/>
+<!-- Warm gold aura -->
+<circle cx="210" cy="375" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.08" stroke-width="2"/>
+
+</svg></div>
   </div>
 
   <!-- ── License activation modal — hidden until check fails ──────────────── -->
@@ -2385,13 +2651,258 @@
     flex-direction:column;
     font-family:Inter,system-ui,sans-serif;
   ">
-    <!-- M13 logo placeholder (will be replaced by SVG if available) -->
-    <div style="margin-bottom:32px;opacity:0.9;">
-      <svg viewBox="0 0 200 60" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
-        <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle"
-          font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="48"
-          letter-spacing="-3" fill="#f0c040">M13</text>
-      </svg>
+    <div style="margin-bottom:32px;width:110px;height:110px;opacity:0.95;">
+<svg style="width:110px;height:110px;" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 680 680">
+<title>M13 — DJ Library &amp; Discovery</title>
+<desc>M13 logo — zodiac wheel with line art signs, Circle of Fifths in gold, realistic night sky, golden M, Strawberry Full Moon at 15 degrees Sagittarius per Vedic sidereal astrology — June 29 2026</desc>
+<defs>
+  <radialGradient id="moonGrad" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.15"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="0.8" stroke-opacity="0.65"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="0.5" stroke-opacity="0.15"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.4"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="0.5" stroke-opacity="0.25">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — white highlighted, launch date marker -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="0.9" stroke-opacity="0.55" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.55"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="0.5" stroke-opacity="0.38">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary — deepest ice #7ab0d0 -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="0.5" stroke-opacity="0.5"/>
+
+<!-- Night sky stars — dim gold -->
+<g fill="#c89820" fill-opacity="0.3">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+
+<!-- Mid stars — warm gold -->
+<g fill="#ffd060" fill-opacity="0.45">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+
+<!-- Bright warm stars -->
+<g fill="#ffe8a0" fill-opacity="0.65">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+
+<!-- Brightest white stars -->
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+
+<!-- Star sparkles -->
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.4" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- Golden M — left/right verticals bright gold, diagonals darker gold -->
+<line x1="292" y1="378" x2="292" y2="305" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="378" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="3.5" fill="#f0c040" fill-opacity="0.9"/>
+<circle cx="340" cy="340" r="8" fill="#f0c040" fill-opacity="0.08"/>
+
+<!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
+<!-- Outer atmosphere glow -->
+<circle cx="210" cy="375" r="20" fill="url(#moonGlow)"/>
+<!-- Moon sphere with realistic radial gradient shading -->
+<circle cx="210" cy="375" r="12" fill="url(#moonGrad)"/>
+<!-- Mare — dark surface patches -->
+<ellipse cx="207" cy="370" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.35" transform="rotate(-20,207,370)"/>
+<ellipse cx="213" cy="374" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.28" transform="rotate(15,213,374)"/>
+<ellipse cx="206" cy="378" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.22" transform="rotate(-10,206,378)"/>
+<ellipse cx="215" cy="369" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.2"/>
+<ellipse cx="209" cy="381" rx="1.8" ry="1.2" fill="#8a7a50" fill-opacity="0.18" transform="rotate(25,209,381)"/>
+<!-- Crater rings -->
+<circle cx="204" cy="372" r="1.2" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.3"/>
+<circle cx="214" cy="377" r="0.9" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.25"/>
+<circle cx="208" cy="380" r="0.7" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.2"/>
+<!-- Moon edge -->
+<circle cx="210" cy="375" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.3"/>
+<!-- Warm gold aura -->
+<circle cx="210" cy="375" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.08" stroke-width="2"/>
+
+</svg>
     </div>
 
     <div style="width:100%;max-width:420px;padding:0 24px;">
@@ -2399,13 +2910,13 @@
       <p id="licModalSub" style="font-size:0.875rem;color:#888;text-align:center;margin-bottom:32px;line-height:1.6;">Enter your license key to continue. Keys are included in your purchase email.</p>
 
       <div id="licModalInput" style="margin-bottom:12px;">
-        <input id="licKeyInput" type="text" placeholder="M13-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"
-          maxlength="19"
+        <input id="licKeyInput" type="text" placeholder="M13-XXXX-XXXX" autocomplete="off" spellcheck="false"
+          maxlength="13"
           style="width:100%;background:#161616;border:1.5px solid #2a2a2a;border-radius:10px;
             padding:14px 18px;color:#f0f0f0;font-size:1.1rem;font-family:'SF Mono','Fira Code',monospace;
             letter-spacing:0.08em;text-align:center;outline:none;transition:border-color 0.15s;
             box-sizing:border-box;"
-          onkeyup="licFormatKey(this)"
+          oninput="licFormatKey(this,event)"
           onkeydown="if(event.key==='Enter')licActivate()"
         />
       </div>
@@ -2426,6 +2937,95 @@
       </div>
     </div>
   </div>
+
+
+  <!-- ── Pre-order screen — shown when license has pre_order=true ─────────── -->
+  <div id="preOrderModal" style="
+    position:fixed;inset:0;z-index:9999;
+    background:#060610;
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:0;
+    font-family:Inter,system-ui,sans-serif;
+  ">
+    <!-- Stars -->
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="opacity:0.5">
+        <circle cx="12%" cy="18%" r="1.2" fill="#a8d8ee"/><circle cx="88%" cy="12%" r="0.8" fill="#a8d8ee"/>
+        <circle cx="7%" cy="65%" r="1" fill="#a8d8ee"/><circle cx="92%" cy="72%" r="1.4" fill="#a8d8ee"/>
+        <circle cx="45%" cy="8%" r="0.9" fill="#a8d8ee"/><circle cx="67%" cy="90%" r="1.1" fill="#a8d8ee"/>
+        <circle cx="23%" cy="88%" r="0.7" fill="#f0c040" opacity="0.6"/><circle cx="78%" cy="35%" r="0.8" fill="#f0c040" opacity="0.6"/>
+        <circle cx="55%" cy="92%" r="1" fill="#a8d8ee"/><circle cx="34%" cy="5%" r="1.3" fill="#a8d8ee"/>
+      </svg>
+    </div>
+
+    <!-- Moon -->
+    <div style="margin-bottom:28px;position:relative;">
+      <div id="poMoonGlow" style="position:absolute;inset:-24px;border-radius:50%;background:radial-gradient(circle,rgba(240,192,64,0.15) 0%,transparent 70%);animation:poGlow 3s ease-in-out infinite alternate;"></div>
+      <svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="poMoonG" cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#fffdf0"/>
+            <stop offset="45%" stop-color="#f0e8c8"/>
+            <stop offset="100%" stop-color="#c8a860"/>
+          </radialGradient>
+        </defs>
+        <circle cx="45" cy="45" r="38" fill="#0a0a20" opacity="0.6"/>
+        <circle cx="45" cy="45" r="32" fill="url(#poMoonG)"/>
+        <ellipse cx="42" cy="38" rx="7" ry="5" fill="#a08840" opacity="0.28" transform="rotate(-15,42,38)"/>
+        <ellipse cx="50" cy="47" rx="5" ry="3.5" fill="#a08840" opacity="0.22"/>
+        <circle cx="45" cy="45" r="32" fill="none" stroke="#d0c080" stroke-width="0.5" opacity="0.4"/>
+      </svg>
+    </div>
+
+    <!-- Headline -->
+    <h1 style="font-size:1.5rem;font-weight:800;color:#f0f0f0;text-align:center;margin:0 0 10px;letter-spacing:-0.03em;padding:0 24px;">
+      Thank you for pre-ordering M13.
+    </h1>
+    <p style="font-size:0.95rem;color:#a8d8ee;text-align:center;margin:0 0 36px;line-height:1.6;padding:0 32px;max-width:380px;">
+      Your license activates on <strong style="color:#f0c040;">June&nbsp;29&nbsp;2026</strong> — Strawberry Moon.&nbsp;🌕
+    </p>
+
+    <!-- Countdown -->
+    <div style="display:flex;gap:20px;margin-bottom:40px;" id="poCountdown">
+      <div style="text-align:center;">
+        <div id="poDays" style="font-size:2.8rem;font-weight:900;color:#f0c040;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums;">--</div>
+        <div style="font-size:0.7rem;color:#666;letter-spacing:2px;margin-top:4px;">DAYS</div>
+      </div>
+      <div style="font-size:2.4rem;color:#333;line-height:1.1;align-self:flex-start;margin-top:4px;">:</div>
+      <div style="text-align:center;">
+        <div id="poHours" style="font-size:2.8rem;font-weight:900;color:#f0c040;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums;">--</div>
+        <div style="font-size:0.7rem;color:#666;letter-spacing:2px;margin-top:4px;">HOURS</div>
+      </div>
+      <div style="font-size:2.4rem;color:#333;line-height:1.1;align-self:flex-start;margin-top:4px;">:</div>
+      <div style="text-align:center;">
+        <div id="poMins" style="font-size:2.8rem;font-weight:900;color:#f0c040;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums;">--</div>
+        <div style="font-size:0.7rem;color:#666;letter-spacing:2px;margin-top:4px;">MINS</div>
+      </div>
+      <div style="font-size:2.4rem;color:#333;line-height:1.1;align-self:flex-start;margin-top:4px;">:</div>
+      <div style="text-align:center;">
+        <div id="poSecs" style="font-size:2.8rem;font-weight:900;color:#f0c040;line-height:1;letter-spacing:-2px;font-variant-numeric:tabular-nums;">--</div>
+        <div style="font-size:0.7rem;color:#666;letter-spacing:2px;margin-top:4px;">SECS</div>
+      </div>
+    </div>
+
+    <!-- Key display -->
+    <div style="font-size:0.75rem;color:#333;letter-spacing:2px;margin-bottom:8px;">YOUR LICENSE KEY</div>
+    <div id="poKeyDisplay" style="
+      font-family:'SF Mono','Fira Code',monospace;font-size:0.9rem;
+      color:#555;letter-spacing:0.1em;margin-bottom:40px;
+    ">M13-XXXX-XXXX-XXXX</div>
+
+    <p style="font-size:0.78rem;color:#333;text-align:center;max-width:320px;line-height:1.6;padding:0 24px;">
+      Keep this key safe. It will automatically unlock the full app on launch day.
+    </p>
+  </div>
+
+  <style>
+    @keyframes poGlow {
+      from { opacity: 0.6; transform: scale(0.95); }
+      to   { opacity: 1;   transform: scale(1.05); }
+    }
+  </style>
 
   <!-- License info modal (shown from menu) -->
   <div id="licenseInfoModal" hidden style="
@@ -2461,15 +3061,36 @@
     // shortcut handlers know to stand down.
     window._licModalOpen = false;
 
-    function licFormatKey(input) {
-      // Strip everything non-alphanumeric, uppercase, cap at 16 chars (M13 + 12 body).
-      let raw = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      // Drop a typed "M13" prefix so we don't double it
-      if (raw.startsWith('M13')) raw = raw.slice(3);
-      raw = raw.slice(0, 12);
-      const parts = raw.match(/.{1,4}/g) || [];
-      input.value = raw.length ? 'M13-' + parts.join('-') : '';
+    function licFormatKey(input, event) {
       input.style.borderColor = '#2a2a2a';
+
+      const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!raw) { input.value = ''; return; }
+
+      // Rebuild as M13-XXXX-XXXX (max 11 alphanum chars)
+      const capped = raw.slice(0, 11);
+      // Group into segments: first 3 (M13) then groups of 4
+      let formatted = '';
+      if (capped.length <= 3) {
+        formatted = capped;
+      } else {
+        formatted = capped.slice(0, 3) + '-' + capped.slice(3, 7);
+        if (capped.length > 7) formatted += '-' + capped.slice(7, 11);
+      }
+
+      // Preserve cursor: count alphanum chars before old cursor, reposition after format
+      const cursorBefore = input.selectionStart;
+      const rawBefore = input.value.slice(0, cursorBefore).toUpperCase().replace(/[^A-Z0-9]/g, '').length;
+
+      input.value = formatted;
+
+      // Map raw char count back to position in formatted string
+      let rawCount = 0, newCursor = formatted.length;
+      for (let i = 0; i < formatted.length; i++) {
+        if (rawCount >= rawBefore) { newCursor = i; break; }
+        if (/[A-Z0-9]/.test(formatted[i])) rawCount++;
+      }
+      try { input.setSelectionRange(newCursor, newCursor); } catch(e) {}
     }
 
     function licSetMsg(text, color) {
@@ -2482,10 +3103,9 @@
       const btn = document.getElementById('licActivateBtn');
       if (btn.disabled) return; // prevent double-fire
 
-      // M13-XXXX-XXXX-XXXX = "M13" (3) + 12 body chars = 15 alphanumeric total
-      const raw = document.getElementById('licKeyInput').value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      if (raw.length < 15) { licSetMsg('Please enter a complete license key (M13-XXXX-XXXX-XXXX).', '#e05252'); return; }
-      const key = document.getElementById('licKeyInput').value.trim();
+      const key = document.getElementById('licKeyInput').value.trim().toUpperCase();
+      if (key.length < 13) { licSetMsg('Please enter a complete license key (M13-XXXX-XXXX).', '#e05252'); return; }
+      console.log('[licActivate] sending key to server:', JSON.stringify(key));
 
       btn.disabled = true;
       btn.textContent = 'Activating…';
@@ -2493,7 +3113,16 @@
 
       try {
         const result = await window.m13.activateLicense(key);
-        if (result.success) {
+        if (result.success && result.preOrder) {
+          // Pre-order key — valid but app locked until June 29
+          licSetMsg('✓ Key accepted! Your license activates on June 29 2026.', '#f0c040');
+          btn.textContent = '✓ Pre-order registered';
+          setTimeout(() => {
+            const m = document.getElementById('licenseModal');
+            if (m) m.style.display = 'none';
+            showPreOrderScreen(key);
+          }, 900);
+        } else if (result.success) {
           licSetMsg('✓ License activated! Welcome to M13.', '#4caf7d');
           btn.textContent = '✓ Activated';
           window._licModalOpen = false;
@@ -2572,7 +3201,11 @@
 
       const result = await window.m13.checkLicense();
 
-      if (result.valid) {
+      if (result.valid && result.preOrder) {
+        // Pre-order license — valid key but app not yet unlocked until June 29 2026
+        showPreOrderScreen(result.licenseKey);
+        dismissSplash();
+      } else if (result.valid) {
         // License good — fade splash, app appears underneath
         window._licModalOpen = false;
         dismissSplash();
@@ -2587,6 +3220,51 @@
           if (inp) inp.focus();
         }, 400);
       }
+
+
+    // ── Pre-order screen ──────────────────────────────────────────────────────
+    const LAUNCH_DATE = new Date('2026-06-29T00:00:00'); // midnight local time
+
+    function isLaunchDay() {
+      return new Date() >= LAUNCH_DATE;
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const diff = LAUNCH_DATE - now;
+      if (diff <= 0) {
+        // Launch day has arrived — remove pre-order screen and let app through
+        const po = document.getElementById('preOrderModal');
+        if (po) po.remove();
+        window._licModalOpen = false;
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const fmt = n => String(n).padStart(2, '0');
+      document.getElementById('poDays').textContent  = fmt(d);
+      document.getElementById('poHours').textContent = fmt(h);
+      document.getElementById('poMins').textContent  = fmt(m);
+      document.getElementById('poSecs').textContent  = fmt(s);
+    }
+
+    function showPreOrderScreen(licenseKey) {
+      if (isLaunchDay()) {
+        // Launch day — just unlock normally, don't show pre-order screen
+        window._licModalOpen = false;
+        return;
+      }
+      window._licModalOpen = true;
+      const modal = document.getElementById('preOrderModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      const keyEl = document.getElementById('poKeyDisplay');
+      if (keyEl && licenseKey) keyEl.textContent = licenseKey;
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
 
       // Wire up menu → license info dialog
       window.m13.onOpenLicenseInfo(() => showLicenseInfo());
@@ -3155,10 +3833,11 @@
       <button id="copyFolderBtn" class="btn" type="button">Copy Folder</button>
       <label class="search-box" for="searchInput">
         <span>🔎</span>
-        <input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre, folder… (⌘F)" autocomplete="off" />
+        <input id="searchInput" type="search" placeholder="Search title, artist, BPM, key, genre… (⌘F)" autocomplete="off" />
         <span id="searchCount" class="search-count" hidden></span>
         <button id="searchClearBtn" class="search-clear" type="button" hidden aria-label="Clear search">✕</button>
       </label>
+      <div class="toolbar-spacer"></div>
     </section>
 
     <!-- Library breadcrumb (album / artist drill-down) -->
@@ -3231,7 +3910,7 @@
         </div>
         <div id="emptyState" class="empty-state"><div><h2>Welcome to your DJ library</h2><p>Open a folder to scan for audio files and build your collection.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="emptyOpenBtn" class="btn btn-primary" type="button">Open Library</button><button id="emptyRekordboxBtn" class="btn" type="button">📀 Scan from Rekordbox</button></div></div></div>
         <div id="tableWrap" class="table-wrap" hidden>
-          <table><thead><tr><th class="art-cell"></th><th>Track</th><th>Artist</th><th>BPM</th><th>Key</th><th>Folder</th><th>Format</th><th>Size</th><th class="copy-cell"></th></tr></thead><tbody id="trackTableBody"></tbody></table>
+          <table><thead><tr><th class="art-cell"></th><th>Track</th><th>Album</th><th>Artist</th><th>BPM</th><th>Key</th><th>Time</th><th>Format</th><th>Folder</th><th class="copy-cell"></th></tr></thead><tbody id="trackTableBody"></tbody></table>
         </div>
         <!-- Album grid view -->
         <div id="albumGrid"></div>
@@ -3275,8 +3954,8 @@
           <table>
             <thead><tr>
               <th class="art-cell"></th>
-              <th>Track</th><th>Artist</th><th>BPM</th><th>Key</th>
-              <th>Genre</th><th>Format</th><th>Size</th><th class="copy-cell"></th>
+              <th>Track</th><th>Album</th><th>Artist</th><th>BPM</th><th>Key</th>
+              <th>Time</th><th>Format</th><th>Folder</th><th class="copy-cell"></th>
             </tr></thead>
             <tbody id="bangersTableBody"></tbody>
           </table>
@@ -3536,7 +4215,259 @@
       <canvas id="ambientStars"></canvas>
 
       <div class="ambient-top">
-        <div class="ambient-m13-logo">M13</div>
+        <div class="ambient-m13-logo" style="width:52px;height:52px;opacity:0.85;">
+<svg style="width:52px;height:52px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" style="display:block;flex-shrink:0">
+
+
+<defs>
+  <radialGradient id="moonGrad-amb" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlow-amb" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.15"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.2" stroke-opacity="0.8"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="1.0" stroke-opacity="0.65">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — white highlighted, launch date marker -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="1.0" stroke-opacity="0.85">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary — deepest ice #7ab0d0 -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.0" stroke-opacity="0.9"/>
+
+<!-- Night sky stars — dim gold -->
+<g fill="#c89820" fill-opacity="0.3">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+
+<!-- Mid stars — warm gold -->
+<g fill="#ffd060" fill-opacity="0.45">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+
+<!-- Bright warm stars -->
+<g fill="#ffe8a0" fill-opacity="0.65">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+
+<!-- Brightest white stars -->
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+
+<!-- Star sparkles -->
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.4" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- Golden M — left/right verticals bright gold, diagonals darker gold -->
+<line x1="292" y1="378" x2="292" y2="305" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="378" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="4.5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="10" fill="#f0c040" fill-opacity="0.18"/>
+
+<!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
+<!-- Outer atmosphere glow -->
+<circle cx="210" cy="375" r="20" fill="url(#moonGlow-amb)"/>
+<!-- Moon sphere with realistic radial gradient shading -->
+<circle cx="210" cy="375" r="12" fill="url(#moonGrad-amb)"/>
+<!-- Mare — dark surface patches -->
+<ellipse cx="207" cy="370" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.35" transform="rotate(-20,207,370)"/>
+<ellipse cx="213" cy="374" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.28" transform="rotate(15,213,374)"/>
+<ellipse cx="206" cy="378" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.22" transform="rotate(-10,206,378)"/>
+<ellipse cx="215" cy="369" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.2"/>
+<ellipse cx="209" cy="381" rx="1.8" ry="1.2" fill="#8a7a50" fill-opacity="0.18" transform="rotate(25,209,381)"/>
+<!-- Crater rings -->
+<circle cx="204" cy="372" r="1.2" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.3"/>
+<circle cx="214" cy="377" r="0.9" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.25"/>
+<circle cx="208" cy="380" r="0.7" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.2"/>
+<!-- Moon edge -->
+<circle cx="210" cy="375" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.3"/>
+<!-- Warm gold aura -->
+<circle cx="210" cy="375" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.08" stroke-width="2"/>
+
+</svg>
+</div>
       </div>
 
       <!-- Clock as centred background watermark -->
@@ -3547,7 +4478,259 @@
       <div class="ambient-center" id="ambientCenter">
         <!-- idle: no track playing -->
         <div id="ambientIdle">
-          <div class="ambient-idle-logo">M13</div>
+          <div class="ambient-idle-logo" style="width:220px;height:220px;">
+<svg style="width:220px;height:220px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 680" style="display:block;flex-shrink:0">
+
+
+<defs>
+  <radialGradient id="moonGrad-idle" cx="60%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="#fffdf0" stop-opacity="1"/>
+    <stop offset="40%" stop-color="#f0e8d0" stop-opacity="1"/>
+    <stop offset="75%" stop-color="#d8c89a" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#b8a870" stop-opacity="1"/>
+  </radialGradient>
+  <radialGradient id="moonGlow-idle" cx="50%" cy="50%" r="50%">
+    <stop offset="70%" stop-color="#f0c040" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#f0c040" stop-opacity="0.15"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<circle cx="340" cy="340" r="330" fill="#060610"/>
+
+<!-- Outermost rings — brightest ice #c2e8f5 -->
+<circle cx="340" cy="340" r="295" fill="none" stroke="#c2e8f5" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="340" cy="340" r="288" fill="none" stroke="#c2e8f5" stroke-width="1.2" stroke-opacity="0.8"/>
+
+<!-- Zodiac band rings — #a8d8ee -->
+<circle cx="340" cy="340" r="280" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+<circle cx="340" cy="340" r="258" fill="none" stroke="#a8d8ee" stroke-width="1.2" stroke-opacity="0.85"/>
+
+<!-- Zodiac dividers -->
+<g fill="none" stroke="#a8d8ee" stroke-width="1.0" stroke-opacity="0.65">
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="60" x2="340" y2="82" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- ARIES -->
+<g transform="rotate(0,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-6,4 C-6,-2 -2,-7 0,-7 C2,-7 6,-2 6,4"/>
+  <path d="M-4,4 C-8,0 -9,-5 -6,-8"/>
+  <path d="M4,4 C8,0 9,-5 6,-8"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+</g></g>
+
+<!-- TAURUS -->
+<g transform="rotate(30,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="0" cy="2" r="5"/>
+  <path d="M-5,-3 C-5,-8 -2,-9 0,-9 C2,-9 5,-8 5,-3"/>
+</g></g>
+
+<!-- GEMINI -->
+<g transform="rotate(60,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-5" y1="-8" x2="-5" y2="8"/>
+  <line x1="5" y1="-8" x2="5" y2="8"/>
+  <path d="M-7,-8 C-3,-6 3,-6 7,-8"/>
+  <path d="M-7,8 C-3,6 3,6 7,8"/>
+</g></g>
+
+<!-- CANCER -->
+<g transform="rotate(90,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,2 C-7,-1 -4,-3 -1,-2 C2,-1 3,2 1,4 C-1,6 -5,5 -6,3"/>
+  <path d="M7,-2 C7,1 4,3 1,2 C-2,1 -3,-2 -1,-4 C1,-6 5,-5 6,-3"/>
+</g></g>
+
+<!-- LEO -->
+<g transform="rotate(120,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <circle cx="-1" cy="1" r="4"/>
+  <path d="M3,1 C6,1 8,-1 8,-4 C8,-7 6,-9 4,-8"/>
+</g></g>
+
+<!-- VIRGO -->
+<g transform="rotate(150,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="6"/>
+  <line x1="0" y1="-7" x2="0" y2="6"/>
+  <line x1="7" y1="-7" x2="7" y2="2"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M0,-1 C2,-1 4,1 4,3 C4,6 2,8 0,8 C-2,8 -4,6 -4,4"/>
+  <path d="M7,2 C9,2 10,5 9,7"/>
+</g></g>
+
+<!-- LIBRA -->
+<g transform="rotate(180,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-8" y1="2" x2="8" y2="2"/>
+  <line x1="-8" y1="6" x2="8" y2="6"/>
+  <path d="M-5,2 C-5,-2 -2,-5 0,-5 C2,-5 5,-2 5,2"/>
+</g></g>
+
+<!-- SCORPIO -->
+<g transform="rotate(210,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="-7" x2="-7" y2="4"/>
+  <line x1="0" y1="-7" x2="0" y2="4"/>
+  <line x1="7" y1="-7" x2="7" y2="0"/>
+  <path d="M-7,-7 C-3,-9 3,-9 7,-7"/>
+  <path d="M-1,4 C1,4 4,5 5,8 L7,6 M5,8 L8,8"/>
+</g></g>
+
+<!-- SAGITTARIUS — white highlighted, launch date marker -->
+<g transform="rotate(240,340,340)"><g fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <line x1="-7" y1="7" x2="7" y2="-7"/>
+  <line x1="7" y1="-7" x2="2" y2="-7"/>
+  <line x1="7" y1="-7" x2="7" y2="-2"/>
+  <line x1="-3" y1="1" x2="3" y2="-5"/>
+</g></g>
+
+<!-- CAPRICORN -->
+<g transform="rotate(270,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-7,-7 L-7,4 C-7,7 -4,9 -1,8"/>
+  <path d="M-1,4 C0,2 2,1 4,2 C7,3 8,6 6,8 C4,10 1,9 0,7"/>
+  <line x1="-7" y1="-7" x2="7" y2="-7"/>
+  <path d="M7,-7 C8,-4 7,0 5,2"/>
+</g></g>
+
+<!-- AQUARIUS -->
+<g transform="rotate(300,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M-8,-2 C-5,-5 -3,-5 0,-2 C3,1 5,1 8,-2"/>
+  <path d="M-8,4 C-5,1 -3,1 0,4 C3,7 5,7 8,4"/>
+</g></g>
+
+<!-- PISCES -->
+<g transform="rotate(330,340,340)"><g fill="none" stroke="#a8d8ee" stroke-width="1.8" stroke-opacity="0.95" stroke-linecap="round" stroke-linejoin="round" transform="translate(340,71)">
+  <path d="M0,-8 C-5,-8 -8,-4 -8,0 C-8,4 -5,8 0,8"/>
+  <path d="M0,-8 C5,-8 8,-4 8,0 C8,4 5,8 0,8"/>
+  <line x1="-8" y1="0" x2="8" y2="0"/>
+</g></g>
+
+<!-- Circle of Fifths rings — #8ec4e0 -->
+<circle cx="340" cy="340" r="250" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+<circle cx="340" cy="340" r="228" fill="none" stroke="#8ec4e0" stroke-width="1.2" stroke-opacity="1.0"/>
+
+<!-- Circle of Fifths dividers -->
+<g fill="none" stroke="#8ec4e0" stroke-width="1.0" stroke-opacity="0.85">
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(0,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(30,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(60,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(90,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(120,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(150,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(180,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(210,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(240,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(270,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(300,340,340)"/>
+  <line x1="340" y1="90" x2="340" y2="112" transform="rotate(330,340,340)"/>
+</g>
+
+<!-- Musical keys — gold -->
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(0,340,340)">C</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(30,340,340)">G</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(60,340,340)">D</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(90,340,340)">A</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(120,340,340)">E</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(150,340,340)">B</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(180,340,340)">F&#x266F;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(210,340,340)">D&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(240,340,340)">A&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(270,340,340)">E&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(300,340,340)">B&#x266D;</text>
+<text font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="#f0c040" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle" x="340" y="101" transform="rotate(330,340,340)">F</text>
+
+<!-- Innermost boundary — deepest ice #7ab0d0 -->
+<circle cx="340" cy="340" r="218" fill="none" stroke="#7ab0d0" stroke-width="1.0" stroke-opacity="0.9"/>
+
+<!-- Night sky stars — dim gold -->
+<g fill="#c89820" fill-opacity="0.3">
+  <circle cx="258" cy="185" r="0.8"/><circle cx="312" cy="165" r="0.9"/><circle cx="392" cy="170" r="0.7"/>
+  <circle cx="448" cy="192" r="0.9"/><circle cx="482" cy="228" r="0.7"/><circle cx="496" cy="278" r="0.8"/>
+  <circle cx="490" cy="342" r="0.7"/><circle cx="476" cy="402" r="0.9"/><circle cx="445" cy="450" r="0.7"/>
+  <circle cx="398" cy="484" r="0.8"/><circle cx="340" cy="496" r="0.9"/><circle cx="278" cy="482" r="0.7"/>
+  <circle cx="228" cy="454" r="0.8"/><circle cx="194" cy="412" r="0.9"/><circle cx="182" cy="356" r="0.7"/>
+  <circle cx="192" cy="292" r="0.8"/><circle cx="220" cy="242" r="0.9"/><circle cx="268" cy="208" r="0.7"/>
+  <circle cx="358" cy="192" r="0.8"/><circle cx="428" cy="212" r="0.7"/><circle cx="466" cy="260" r="0.8"/>
+  <circle cx="470" cy="318" r="0.7"/><circle cx="458" cy="378" r="0.8"/><circle cx="426" cy="430" r="0.9"/>
+  <circle cx="370" cy="464" r="0.7"/><circle cx="306" cy="462" r="0.8"/><circle cx="253" cy="437" r="0.7"/>
+  <circle cx="208" cy="392" r="0.8"/><circle cx="196" cy="332" r="0.9"/><circle cx="208" cy="265" r="0.7"/>
+</g>
+
+<!-- Mid stars — warm gold -->
+<g fill="#ffd060" fill-opacity="0.45">
+  <circle cx="272" cy="228" r="1.3"/><circle cx="340" cy="218" r="1.1"/><circle cx="410" cy="232" r="1.3"/>
+  <circle cx="460" cy="280" r="1.1"/><circle cx="466" cy="350" r="1.3"/><circle cx="442" cy="418" r="1.1"/>
+  <circle cx="394" cy="456" r="1.3"/><circle cx="328" cy="463" r="1.1"/><circle cx="264" cy="446" r="1.3"/>
+  <circle cx="218" cy="406" r="1.1"/><circle cx="207" cy="340" r="1.3"/><circle cx="222" cy="272" r="1.1"/>
+  <circle cx="264" cy="234" r="1.3"/><circle cx="418" cy="256" r="1.1"/><circle cx="452" cy="314" r="1.3"/>
+  <circle cx="436" cy="380" r="1.1"/><circle cx="382" cy="436" r="1.3"/><circle cx="296" cy="441" r="1.1"/>
+</g>
+
+<!-- Bright warm stars -->
+<g fill="#ffe8a0" fill-opacity="0.65">
+  <circle cx="296" cy="258" r="1.4"/><circle cx="380" cy="244" r="1.2"/><circle cx="434" cy="298" r="1.4"/>
+  <circle cx="430" cy="366" r="1.2"/><circle cx="396" cy="420" r="1.4"/><circle cx="324" cy="436" r="1.2"/>
+  <circle cx="266" cy="409" r="1.4"/><circle cx="237" cy="358" r="1.2"/><circle cx="248" cy="298" r="1.4"/>
+  <circle cx="288" cy="267" r="1.2"/><circle cx="363" cy="256" r="1.4"/>
+</g>
+
+<!-- Brightest white stars -->
+<g fill="#ffffff">
+  <circle cx="302" cy="285" r="1.8"/><circle cx="356" cy="272" r="1.5"/><circle cx="410" cy="292" r="1.8"/>
+  <circle cx="434" cy="338" r="1.5"/><circle cx="419" cy="386" r="1.8"/><circle cx="382" cy="413" r="1.5"/>
+  <circle cx="334" cy="419" r="1.8"/><circle cx="289" cy="401" r="1.5"/><circle cx="261" cy="368" r="1.8"/>
+  <circle cx="257" cy="322" r="1.5"/><circle cx="277" cy="282" r="1.8"/><circle cx="318" cy="262" r="1.5"/>
+  <circle cx="386" cy="268" r="1.8"/><circle cx="419" cy="312" r="1.5"/>
+  <circle cx="318" cy="312" r="2.4"/><circle cx="369" cy="298" r="2.2"/>
+  <circle cx="396" cy="352" r="2.4"/><circle cx="348" cy="389" r="2.2"/>
+  <circle cx="297" cy="345" r="2.2"/><circle cx="340" cy="340" r="2.8"/>
+</g>
+
+<!-- Star sparkles -->
+<g stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.4" fill="none">
+  <line x1="318" y1="308" x2="318" y2="316"/><line x1="314" y1="312" x2="322" y2="312"/>
+  <line x1="396" y1="348" x2="396" y2="356"/><line x1="392" y1="352" x2="400" y2="352"/>
+  <line x1="340" y1="336" x2="340" y2="344"/><line x1="336" y1="340" x2="344" y2="340"/>
+</g>
+
+<!-- Golden M — left/right verticals bright gold, diagonals darker gold -->
+<line x1="292" y1="378" x2="292" y2="305" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="388" y2="378" fill="none" stroke="#f0c040" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="292" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="388" y1="305" x2="340" y2="352" fill="none" stroke="#c89820" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Centre point -->
+<circle cx="340" cy="340" r="4.5" fill="#f0c040" fill-opacity="1.0"/>
+<circle cx="340" cy="340" r="10" fill="#f0c040" fill-opacity="0.18"/>
+
+<!-- Full Moon at 15 degrees Sagittarius — Vedic sidereal — June 29 2026 -->
+<!-- Outer atmosphere glow -->
+<circle cx="210" cy="375" r="20" fill="url(#moonGlow-idle)"/>
+<!-- Moon sphere with realistic radial gradient shading -->
+<circle cx="210" cy="375" r="12" fill="url(#moonGrad-idle)"/>
+<!-- Mare — dark surface patches -->
+<ellipse cx="207" cy="370" rx="3.5" ry="2.5" fill="#8a7a50" fill-opacity="0.35" transform="rotate(-20,207,370)"/>
+<ellipse cx="213" cy="374" rx="2.5" ry="2" fill="#8a7a50" fill-opacity="0.28" transform="rotate(15,213,374)"/>
+<ellipse cx="206" cy="378" rx="2" ry="1.5" fill="#8a7a50" fill-opacity="0.22" transform="rotate(-10,206,378)"/>
+<ellipse cx="215" cy="369" rx="1.5" ry="1" fill="#8a7a50" fill-opacity="0.2"/>
+<ellipse cx="209" cy="381" rx="1.8" ry="1.2" fill="#8a7a50" fill-opacity="0.18" transform="rotate(25,209,381)"/>
+<!-- Crater rings -->
+<circle cx="204" cy="372" r="1.2" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.3"/>
+<circle cx="214" cy="377" r="0.9" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.25"/>
+<circle cx="208" cy="380" r="0.7" fill="none" stroke="#c8b878" stroke-width="0.3" stroke-opacity="0.2"/>
+<!-- Moon edge -->
+<circle cx="210" cy="375" r="12" fill="none" stroke="#d0c090" stroke-width="0.4" stroke-opacity="0.3"/>
+<!-- Warm gold aura -->
+<circle cx="210" cy="375" r="14" fill="none" stroke="#f0c040" stroke-opacity="0.08" stroke-width="2"/>
+
+</svg>
+</div>
         </div>
         <!-- playing: track info -->
         <div id="ambientTrackInfo" hidden>
@@ -4159,7 +5342,8 @@
       const inBangers = isBanger(track);
       const bangerIndicator = inBangers ? `<span class="banger-indicator" data-banger-path="${track.path}">⚡</span>` : `<span class="banger-indicator" data-banger-path="${track.path}" hidden>⚡</span>`;
       const bangerBtn = `<button class="banger-row-btn${inBangers ? ' is-banger' : ''}" data-banger-path="${track.path}" type="button" title="${inBangers ? 'Remove from Bangers' : 'Add to Bangers'}">⚡</button>`;
-      return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}${bangerIndicator}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted">${formatSize(track.size)}</td><td class="copy-cell"><div class="row-actions">${bangerBtn}<button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to Set">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
+      const timeStr = track.duration ? formatTime(track.duration) : '—';
+      return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">${artCell}<td class="track-name">${track.name}${bangerIndicator}</td><td class="muted">${track.album || '—'}</td><td class="muted">${track.artist || '—'}</td><td class="muted">${track.bpm || '—'}</td><td class="muted key-cell">${track.key || '—'}</td><td class="muted time-cell">${timeStr}</td><td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td><td class="muted folder-cell" title="${track.folder}">${folderName}</td><td class="copy-cell"><div class="row-actions">${bangerBtn}<button class="add-row-btn${playlist.some(p=>p.path===track.path)?' in-playlist':''}" data-pl-path="${track.path}" type="button" title="Add to Set">+</button><button class="copy-row-btn" data-copy-path="${track.path}" data-copy-name="${track.name.replace(/"/g, '&quot;')}" type="button">⬆ Copy</button></div></td></tr>`;
     }
 
     function renderTracksProgressive(filtered) {
@@ -4878,15 +6062,18 @@
           ? `<td class="art-cell"><img class="track-art" src="${cachedArt}" alt="" /></td>`
           : `<td class="art-cell" data-art-path="${track.path}"><div class="track-art-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" opacity="0.35"/><circle cx="7" cy="7" r="1.8" fill="currentColor" opacity="0.35"/></svg></div></td>`;
         const fmt = (track.ext || '').replace('.', '').toUpperCase();
+        const folderName = track.folder ? track.folder.split('/').filter(Boolean).pop() : '—';
+        const timeStr = track.duration ? formatTime(track.duration) : '—';
         return `<tr class="track-row${currentTrack && currentTrack.path === track.path ? ' active' : ''}" data-track-path="${track.path}">
           ${artCell}
           <td class="track-name">${track.name}</td>
+          <td class="muted">${track.album || '—'}</td>
           <td class="muted">${track.artist || '—'}</td>
           <td class="muted">${track.bpm || '—'}</td>
           <td class="muted key-cell">${track.key || '—'}</td>
-          <td class="muted">${track.genre || '—'}</td>
+          <td class="muted time-cell">${timeStr}</td>
           <td><span class="chip chip-${fmt.toLowerCase()}">${fmt}</span></td>
-          <td class="muted">${formatSize(track.size)}</td>
+          <td class="muted folder-cell" title="${track.folder}">${folderName}</td>
           <td class="copy-cell"><div class="row-actions">
             <button class="bangers-remove-btn" data-remove-path="${track.path}" type="button" title="Remove from Bangers">✕</button>
           </div></td>

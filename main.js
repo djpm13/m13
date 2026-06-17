@@ -21,6 +21,7 @@ function getMusicMetadata() {
 }
 
 const AUDIO_EXTENSIONS = new Set(['.aif', '.aiff', '.mp3', '.wav', '.flac', '.m4a']);
+let audioPort = 41234;
 
 // ── License system ─────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ function readStoredLicense() {
   }
 }
 
-function writeStoredLicense(licenseKey, existingVerifiedAt) {
+function writeStoredLicense(licenseKey, existingVerifiedAt, preOrder = false) {
   const machineId = getMachineId();
   const now = new Date().toISOString();
   fs.writeFileSync(
@@ -54,6 +55,7 @@ function writeStoredLicense(licenseKey, existingVerifiedAt) {
       machineId,
       storedAt: now,
       lastVerifiedAt: existingVerifiedAt || now,
+      preOrder: !!preOrder,
     }),
     'utf8'
   );
@@ -552,9 +554,11 @@ async function readTrackTags(filePath) {
       bpm: common.bpm || '',
       key: common.initialKey || common.key || '',
       genre: Array.isArray(common.genre) ? common.genre.join(', ') : common.genre || '',
+      album: common.album || '',
+      duration: metadata.format.duration || 0,
     };
   } catch (error) {
-    return { artist: '', bpm: '', key: '', genre: '' };
+    return { artist: '', bpm: '', key: '', genre: '', album: '', duration: 0 };
   }
 }
 
@@ -604,9 +608,11 @@ async function scanFolderRecursively(folderPath, onProgress) {
       size: stats.size,
       ext,
       artist: tags.artist,
+      album: tags.album,
       bpm: tags.bpm,
       key: tags.key,
       genre: tags.genre,
+      duration: tags.duration,
     });
     if (onProgress) onProgress(results.length);
   }
@@ -692,9 +698,25 @@ app.whenReady().then(() => {
     }
   });
 
-  server.listen(41234, '127.0.0.1', () => {
-    console.log('Audio server listening on http://127.0.0.1:41234');
+  function startAudioServer(port) {
+    server.listen(port, '127.0.0.1', () => {
+      audioPort = port;
+      console.log(`Audio server listening on http://127.0.0.1:${port}`);
+    });
+  }
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = server.address() ? server.address().port + 1 : audioPort + 1;
+      console.warn(`Port ${audioPort} in use, trying ${nextPort}`);
+      audioPort = nextPort;
+      server.close(() => startAudioServer(nextPort));
+    } else {
+      console.error('Audio server error:', err);
+    }
   });
+
+  startAudioServer(audioPort);
 
   createWindow();
 
@@ -1554,7 +1576,7 @@ ipcMain.handle('get-audio-url', async (_event, filePath) => {
     return '';
   }
 
-  return `http://127.0.0.1:41234/?path=${encodeURIComponent(filePath)}`;
+  return `http://127.0.0.1:${audioPort}/?path=${encodeURIComponent(filePath)}`;
 });
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'm13-config.json');
@@ -2119,7 +2141,7 @@ ipcMain.handle('check-license', async () => {
 
   // Machine matches — valid locally. Check online only if 7 days have passed.
   if (!needsOnlineVerification(stored)) {
-    return { valid: true, licenseKey: stored.licenseKey };
+    return { valid: true, licenseKey: stored.licenseKey, preOrder: !!stored.preOrder };
   }
 
   // Time for a background online check — but don't block the user if it fails
@@ -2127,14 +2149,16 @@ ipcMain.handle('check-license', async () => {
   if (online) {
     if (online.status === 'valid' || online.status === 'already-active') {
       updateLastVerified();
-      return { valid: true, licenseKey: stored.licenseKey };
+      // Persist updated preOrder flag from server
+      writeStoredLicense(stored.licenseKey, new Date().toISOString(), online.preOrder);
+      return { valid: true, licenseKey: stored.licenseKey, preOrder: !!online.preOrder };
     }
     if (online.status === 'wrong-machine') { clearStoredLicense(); return { valid: false, reason: 'wrong-machine' }; }
     if (online.status === 'invalid') { clearStoredLicense(); return { valid: false, reason: 'invalid' }; }
   }
 
   // Server unreachable — grace period: trust the local file
-  return { valid: true, licenseKey: stored.licenseKey, offline: true };
+  return { valid: true, licenseKey: stored.licenseKey, preOrder: !!stored.preOrder, offline: true };
 });
 
 ipcMain.handle('activate-license', async (_event, licenseKey) => {
@@ -2149,8 +2173,8 @@ ipcMain.handle('activate-license', async (_event, licenseKey) => {
     const data = await res.json();
 
     if (data.status === 'success' || data.status === 'already-active') {
-      writeStoredLicense(licenseKey, new Date().toISOString());
-      return { success: true };
+      writeStoredLicense(licenseKey, new Date().toISOString(), data.preOrder);
+      return { success: true, preOrder: !!data.preOrder };
     }
     return { success: false, status: data.status, message: data.message };
   } catch (err) {

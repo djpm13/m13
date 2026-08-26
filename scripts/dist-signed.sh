@@ -28,15 +28,21 @@ echo "Notarize as      : $APPLE_ID  (team $APPLE_TEAM_ID)"
 echo "Building + notarizing… (notarization can take several minutes)"
 echo
 
+# Marker so we only post-process DMGs produced by THIS run — dist/ can hold
+# stale DMGs from older builds, and notarizing one of those fails the script.
+BUILD_STAMP="$(mktemp -t m13build)"
+
 npx electron-builder "$@"
 
 # electron-builder notarizes/staples the .app but NOT the .dmg wrapper, so staple
 # each DMG here. Submitting an already-notarized payload is quick and idempotent.
 echo
-shopt -s nullglob
-dmgs=(dist/*.dmg)
+dmgs=()
+while IFS= read -r f; do dmgs+=("$f"); done \
+  < <(find dist -maxdepth 1 -name "*.dmg" -newer "$BUILD_STAMP" 2>/dev/null)
+rm -f "$BUILD_STAMP"
 if [ ${#dmgs[@]} -eq 0 ]; then
-  echo "No .dmg files in dist/ to staple (skipping)."
+  echo "No .dmg files produced by this build (skipping staple step)."
 else
   DMG_IDENTITY="Developer ID Application: Pravesh Mirpuri (57PW79YX2K)"
   for dmg in "${dmgs[@]}"; do
@@ -60,4 +66,11 @@ else
     xcrun stapler validate "$dmg"
   done
   echo "All DMGs signed + notarized + stapled."
+
+  # electron-builder writes latest-mac.yml BEFORE the DMGs get signed above, so
+  # its DMG hashes/sizes are stale by now. Refresh them (zip entries are untouched,
+  # and the mac auto-updater reads the zip).
+  if [ -f dist/latest-mac.yml ] && [ -f scripts/refresh-manifest.py ]; then
+    python3 scripts/refresh-manifest.py dist/latest-mac.yml
+  fi
 fi

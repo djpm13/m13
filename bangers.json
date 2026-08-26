@@ -22,5 +22,47 @@
     "bpm": 122,
     "key": "C",
     "genre": "Deep House"
+  },
+  {
+    "name": "Miguel Migs, Aya - Into The Red Sky feat. Aya (Migs Extended Moodswing Vocal)",
+    "filename": "Miguel Migs, Aya - Into The Red Sky feat. Aya (Migs Extended Moodswing Vocal).aiff",
+    "path": "/Volumes/BACKUP/MUSIC/2024/January /Paradise Beats 1st January/Miguel Migs, Aya - Into The Red Sky feat. Aya (Migs Extended Moodswing Vocal).aiff",
+    "folder": "/Volumes/BACKUP/MUSIC/2024/January /Paradise Beats 1st January",
+    "size": 62642418,
+    "ext": ".aiff",
+    "artist": "Miguel Migs, Aya",
+    "album": "Into The Red Sky - Remixes",
+    "bpm": 120,
+    "key": "Gm",
+    "genre": "Deep House",
+    "duration": 353.6
+  },
+  {
+    "name": "Tortured Soul - Can't Keep Rhythm From A Dancer (Miguel Migs Salted Vocal)",
+    "filename": "Tortured Soul - Can't Keep Rhythm From A Dancer (Miguel Migs Salted Vocal).aiff",
+    "path": "/Volumes/BACKUP/MUSIC/Salted Music/March/Tortured Soul - Can't Keep Rhythm From A Dancer (Miguel Migs Salted Vocal).aiff",
+    "folder": "/Volumes/BACKUP/MUSIC/Salted Music/March",
+    "size": 65703890,
+    "ext": ".aiff",
+    "artist": "Tortured Soul",
+    "album": "Can't Keep Rhythm From A Dancer",
+    "bpm": 120,
+    "key": "A",
+    "genre": "Deep House",
+    "duration": 371.98108843537415
+  },
+  {
+    "name": "George Cynnamon - Happiness (Extended Mix)",
+    "filename": "George Cynnamon - Happiness (Extended Mix).aiff",
+    "path": "/Volumes/BACKUP/MUSIC/2024/January /Paradise Beats 1st January/George Cynnamon - Happiness (Extended Mix).aiff",
+    "folder": "/Volumes/BACKUP/MUSIC/2024/January /Paradise Beats 1st January",
+    "size": 60803262,
+    "ext": ".aiff",
+    "artist": "George Cynnamon",
+    "album": "Dizzy Dasco",
+    "bpm": 122,
+    "key": "Dm",
+    "genre": "House",
+    "duration": 342.7875056689342
   }
 ]

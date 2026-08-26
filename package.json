@@ -57,6 +57,7 @@
       "notarize": true
     },
     "dmg": {
+      "artifactName": "M13-${arch}.${ext}",
       "title": "M13",
       "background": null,
       "window": {

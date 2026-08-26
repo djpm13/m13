@@ -1,6 +1,6 @@
 {
   "name": "m13",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DJ Library & Discovery App",
   "main": "main.js",
   "author": "dj pints",
@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
+    "dist:signed": "bash scripts/dist-signed.sh",
     "release": "electron-builder --publish always"
   },
   "build": {
@@ -50,8 +51,10 @@
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
+      "identity": "Pravesh Mirpuri (57PW79YX2K)",
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
     },
     "win": {
       "icon": "build/icon.ico",

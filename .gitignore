@@ -3,3 +3,8 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# Apple signing / notarization secrets — NEVER commit these
+*.p8
+notarize.env
+build/notarize.env

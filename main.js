@@ -495,6 +495,12 @@ function buildMenu() {
           label: 'Send Feedback…',
           click: () => shell.openExternal('mailto:hello@m13app.com'),
         },
+        { type: 'separator' },
+        {
+          label: 'Toggle Developer Tools',
+          accelerator: 'CmdOrCtrl+Alt+I',
+          click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.toggleDevTools(); },
+        },
         ...(!isMac ? [{ type: 'separator' }, { label: 'About M13', click: () => createAboutWindow() }] : []),
       ],
     },
@@ -762,6 +768,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('install-update', () => {
     autoUpdater.quitAndInstall(false, true);
+  });
+
+  ipcMain.handle('check-for-updates-now', () => {
+    if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => {});
   });
 
   // ── USB volume watcher ────────────────────────────────────────────────────

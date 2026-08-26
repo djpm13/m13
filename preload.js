@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('m13', {
     return () => ipcRenderer.removeListener('copy-progress', handler);
   },
   installUpdate: () => ipcRenderer.invoke('install-update'),
+  checkForUpdatesNow: () => ipcRenderer.invoke('check-for-updates-now'),
   onUpdateAvailable: (callback) => {
     const handler = (_event, info) => callback(info);
     ipcRenderer.on('update-available', handler);
@@ -61,6 +62,11 @@ contextBridge.exposeInMainWorld('m13', {
     const handler = (_event, info) => callback(info);
     ipcRenderer.on('update-downloaded', handler);
     return () => ipcRenderer.removeListener('update-downloaded', handler);
+  },
+  onCheckForUpdates: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('check-for-updates', handler);
+    return () => ipcRenderer.removeListener('check-for-updates', handler);
   },
   onVolumeMounted: (callback) => {
     const handler = (_event, data) => callback(data);

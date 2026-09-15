@@ -1,6 +1,6 @@
 {
   "name": "m13",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "DJ Library & Discovery App",
   "main": "main.js",
   "author": "dj pints",
@@ -10,7 +10,8 @@
     "start": "electron .",
     "dist": "electron-builder",
     "release": "electron-builder --publish always",
-    "dist:signed": "bash scripts/dist-signed.sh"
+    "dist:signed": "bash scripts/dist-signed.sh",
+    "test": "node tests/trial.test.js"
   },
   "build": {
     "appId": "com.djpints.m13",
@@ -30,6 +31,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "trial.js",
       "index.html",
       "package.json",
       "node_modules/**"

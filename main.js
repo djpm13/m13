@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, net, nativeTheme } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain, session, net, nativeTheme, powerMonitor } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const http = require('http');
@@ -10,6 +10,11 @@ const crypto = require('crypto');
 const { execFile } = require('child_process');
 const plist = require('plist');
 const { YIN } = require('pitchfinder');
+const trialLib = require('./trial');
+
+// Test builds only: run with a separate profile (licence, trial, library) so
+// trial testing never touches the real one. Must run before anything reads userData.
+if (!app.isPackaged && process.env.M13_USER_DATA) app.setPath('userData', process.env.M13_USER_DATA);
 
 // music-metadata is an ESM package whose CJS `require` entry resolves (in
 // Electron's main process) to a stub that only exposes `loadMusicMetadata`,
@@ -28,7 +33,8 @@ let audioPort = 41234;
 
 // ── License system ─────────────────────────────────────────────────────────────
 
-const LICENSE_API = 'https://m13app.com/.netlify/functions/license';
+// Test builds may point at a private test deploy of the server (M13_LICENSE_API).
+const LICENSE_API = (!app.isPackaged && process.env.M13_LICENSE_API) || 'https://m13app.com/.netlify/functions/license';
 
 // Network-STABLE machine identity. The old formula hashed os.hostname(), which
 // macOS rewrites from the DHCP server of whatever network you join — so joining
@@ -63,6 +69,9 @@ function _persistedFallbackId() {
 }
 
 function getMachineId() {
+  // Test builds only: a fake id, so trial testing never creates a server record
+  // for a real Mac.
+  if (!app.isPackaged && /^[0-9a-f]{32}$/.test(process.env.M13_FAKE_MACHINE_ID || '')) return process.env.M13_FAKE_MACHINE_ID;
   if (_machineIdCache) return _machineIdCache;
   let anchor = process.platform === 'darwin' ? _hwUuidMac() : null;
   // Stable, network-independent components only (NO hostname).
@@ -136,6 +145,133 @@ async function verifyLicenseOnline(licenseKey, machineId) {
   } catch {
     return null; // offline or server unreachable
   }
+}
+
+// ── Entitlement: licensed, free trial, or trial ended (2.2) ─────────────────
+// A license always wins. Without one, the free trial (trial.js) decides: 13
+// calendar days with everything, then read-only. Read-only is enforced here, on
+// the actions that create or change things, not only by hiding buttons.
+
+// Everything that creates or changes something. Browsing, search, play history,
+// recorded sets and playback stay open after the trial ends.
+// tests/trial.test.js fails if an action is added without being classified.
+const LOCKED_AFTER_TRIAL = new Set([
+  // library & files
+  'library-add-files', 'locations-add', 'locations-remove', 'delete-track-file',
+  // copying & exporting
+  'copy-folder', 'copy-track', 'copy-track-numbered', 'ensure-export-folder', 'export-track-converted',
+  'export-catalogue', 'export-set', 'save-playlist-file', 'save-tracklist', 'save-set-tags',
+  // changing tracks
+  'convert-tuning', 'save-metadata', 'embed-artwork', 'search-artwork', 'apply-brand-artwork', 'prepare-brand-image',
+  // crates, sessions, bangers, ratings & loved
+  'crates-save', 'crates-delete', 'sessions-save', 'sessions-delete', 'save-bangers', 'save-track-state',
+]);
+
+// Approved wording (2026-09-15). index.html spots it to show the Buy / Enter key prompt instead.
+const TRIAL_ENDED_MESSAGE = 'Your free trial has ended, saving, converting and exporting are locked. Your library is still here to browse and play.';
+const BUY_URL = 'https://m13app.gumroad.com/l/fqprav';
+
+function lockedResult(channel) {
+  if (channel === 'ensure-export-folder') return null; // its callers treat null as "couldn't"
+  return { ok: false, success: false, found: false, locked: true, error: TRIAL_ENDED_MESSAGE, reason: TRIAL_ENDED_MESSAGE, message: TRIAL_ENDED_MESSAGE };
+}
+
+// Every ipcMain.handle in this file goes through here, so a locked action can't
+// be reached by any route once the trial has ended.
+const _ipcHandlers = new Map(); // channel → wrapped handler (the dev self-test uses it)
+const _ipcHandle = ipcMain.handle.bind(ipcMain);
+ipcMain.handle = (channel, handler) => {
+  const wrapped = async (event, ...args) => {
+    if (LOCKED_AFTER_TRIAL.has(channel)) {
+      const ent = await ensureEntitlement();
+      if (!ent.canChange) return lockedResult(channel);
+    }
+    return handler(event, ...args);
+  };
+  _ipcHandlers.set(channel, wrapped);
+  return _ipcHandle(channel, wrapped);
+};
+
+function getTrialPath() {
+  return path.join(app.getPath('userData'), 'trial.json');
+}
+
+// Test builds only: pretend it is N days later (M13_TRIAL_DAYS_AHEAD), to see
+// day 10, 13 and 14 without waiting. Server calls always use the real date.
+function trialNow() {
+  const ahead = !app.isPackaged ? Number(process.env.M13_TRIAL_DAYS_AHEAD || 0) : 0;
+  return Date.now() + (Number.isFinite(ahead) ? ahead : 0) * trialLib.DAY_MS;
+}
+
+async function callTrialServer(start) {
+  try {
+    const res = await net.fetch(LICENSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'trial',
+        machineId: getMachineId(),
+        localDate: trialLib.localDateString(Date.now()),
+        appVersion: app.getVersion(),
+        ...(start ? { start: true } : {}),
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && ['none', 'active', 'expired'].includes(data.status) ? data : null;
+  } catch {
+    return null; // offline or server unreachable
+  }
+}
+
+// Brings trial.json in line with the server. Returns { offline: true } when
+// the server can't be reached, so nothing local is changed.
+async function syncTrialWithServer({ start = false } = {}) {
+  const server = await callTrialServer(start);
+  if (!server) return { offline: true };
+  if (server.status === 'none') {
+    trialLib.removeTrialFile(getTrialPath()); // the server is the record
+  } else {
+    trialLib.writeTrialFile(getTrialPath(), getMachineId(), trialLib.fromServer(server, Date.now()));
+  }
+  return { status: server.status };
+}
+
+function trialStateFromDisk() {
+  const file = trialLib.readTrialFile(getTrialPath(), getMachineId());
+  const now = trialNow();
+  // Remember the latest time seen, so winding the clock back can't add days.
+  if (file.valid && now > (Number(file.data.maxSeenMs) || 0) + 60 * 1000) {
+    try { trialLib.writeTrialFile(getTrialPath(), getMachineId(), { ...file.data, maxSeenMs: now }); } catch { /* keep going */ }
+  }
+  return trialLib.computeTrialState(file, now);
+}
+
+async function computeEntitlement() {
+  const license = await checkLicenseState();
+  if (license.valid) return { kind: 'licensed', canChange: true, preOrder: !!license.preOrder };
+  const trial = trialStateFromDisk();
+  return { ...trial, canChange: trial.kind === 'trial' };
+}
+
+let _entitlement = null;
+let _entitlementPromise = null;
+let _trialSyncedThisLaunch = false;
+
+async function refreshEntitlement() {
+  const next = await computeEntitlement();
+  const key = (e) => e && [e.kind, e.day, e.canChange, !!e.unverified].join('|');
+  const changed = !!_entitlement && key(next) !== key(_entitlement);
+  _entitlement = next;
+  if (changed && mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('entitlement-changed', next);
+  return next;
+}
+
+function ensureEntitlement() {
+  if (_entitlement) return Promise.resolve(_entitlement);
+  if (!_entitlementPromise) _entitlementPromise = refreshEntitlement().finally(() => { _entitlementPromise = null; });
+  return _entitlementPromise;
 }
 
 // Electron's bundled Chromium has no AIFF demuxer (canPlayType('audio/aiff') === '').
@@ -1156,6 +1292,16 @@ async function scanFolderRecursively(folderPath, onProgress, tally, cache) {
 }
 
 app.whenReady().then(() => {
+  // Test builds only: verify the trial locks inside real Electron, then quit.
+  if (!app.isPackaged && process.env.M13_SELFTEST === 'entitlement') {
+    runEntitlementSelfTest().then((code) => app.exit(code));
+    return;
+  }
+  if (!app.isPackaged && process.env.M13_SELFTEST === 'trial-flow') {
+    runTrialFlowSelfTest().then((code) => app.exit(code));
+    return;
+  }
+
   app.setName('M13');
   Menu.setApplicationMenu(buildMenu());
 
@@ -1278,6 +1424,28 @@ app.whenReady().then(() => {
   startAudioServer(audioPort);
 
   createWindow();
+
+  // Test builds only: screenshot the window after optional scripted steps, then quit.
+  const uiSnap = !app.isPackaged ? { file: process.env.M13_UI_SNAPSHOT, actions: process.env.M13_UI_ACTIONS } : {};
+  if (uiSnap.file) {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    mainWindow.webContents.once('did-finish-load', async () => {
+      try {
+        await wait(3500);
+        if (uiSnap.actions) await mainWindow.webContents.executeJavaScript(uiSnap.actions);
+        await wait(1200);
+        const image = await mainWindow.webContents.capturePage();
+        fs.writeFileSync(uiSnap.file, image.toPNG());
+      } catch (err) {
+        console.error('[ui snapshot]', err && err.message);
+      }
+      app.exit(0);
+    });
+  }
+
+  // Day 13 → 14 can happen while M13 is open, and a Mac can sleep through it.
+  setInterval(() => { refreshEntitlement().catch(() => {}); }, 15 * 60 * 1000);
+  powerMonitor.on('resume', () => { refreshEntitlement().catch(() => {}); });
 
   // ── Auto-updater ──────────────────────────────────────────────────────────
   autoUpdater.autoDownload = true;
@@ -4420,7 +4588,8 @@ ipcMain.handle('get-license-info', () => {
   return { stored, machineId };
 });
 
-ipcMain.handle('check-license', async () => {
+// Decides whether this Mac is licensed. Used at launch and by the entitlement check.
+async function checkLicenseState() {
   const hardwareId = getMachineId();
   let stored = readStoredLicense();
 
@@ -4470,7 +4639,9 @@ ipcMain.handle('check-license', async () => {
   // Server unreachable — trust the authentic local file. NEVER lock out offline
   // (the 18-hour-flight case). Re-verification stays opportunistic.
   return { valid: true, licenseKey: stored.licenseKey, preOrder: !!stored.preOrder, offline: true };
-});
+}
+
+ipcMain.handle('check-license', () => checkLicenseState());
 
 ipcMain.handle('activate-license', async (_event, licenseKey) => {
   const machineId = getMachineId();
@@ -4485,6 +4656,7 @@ ipcMain.handle('activate-license', async (_event, licenseKey) => {
 
     if (data.status === 'success' || data.status === 'already-active') {
       writeStoredLicense(licenseKey, new Date().toISOString(), data.preOrder);
+      await refreshEntitlement(); // everything unlocks straight away
       return { success: true, preOrder: !!data.preOrder };
     }
     return { success: false, status: data.status, message: data.message };
@@ -4497,6 +4669,31 @@ ipcMain.handle('activate-license', async (_event, licenseKey) => {
   }
 });
 
+ipcMain.handle('get-entitlement', async () => {
+  const ent = await ensureEntitlement();
+  // Once per launch, check the trial with the server in the background (the
+  // server is the record; this also picks up a trial started on a reinstall).
+  if (ent.kind !== 'licensed' && !_trialSyncedThisLaunch) {
+    _trialSyncedThisLaunch = true;
+    syncTrialWithServer().then((r) => { if (!r.offline) refreshEntitlement(); });
+  }
+  return ent;
+});
+
+ipcMain.handle('start-trial', async () => {
+  const current = await refreshEntitlement();
+  if (current.kind === 'licensed' || current.kind === 'trial') return { ok: true, entitlement: current };
+  const result = await syncTrialWithServer({ start: true });
+  if (result.offline) {
+    return { ok: false, error: 'offline', message: 'Starting your free trial needs an internet connection, just this once. Check your connection and try again.' };
+  }
+  _trialSyncedThisLaunch = true;
+  return { ok: true, entitlement: await refreshEntitlement() };
+});
+
+// A fixed address only — the page can't ask the app to open anything else.
+ipcMain.handle('open-buy-page', () => shell.openExternal(BUY_URL));
+
 ipcMain.handle('transfer-license', async (_event, licenseKey) => {
   const machineId = getMachineId();
   try {
@@ -4507,9 +4704,104 @@ ipcMain.handle('transfer-license', async (_event, licenseKey) => {
     });
     if (!res.ok) return { status: 'server-error', message: `Server error ${res.status}.` };
     const data = await res.json();
-    if (data.status === 'success') clearStoredLicense();
+    if (data.status === 'success') {
+      clearStoredLicense();
+      await refreshEntitlement();
+    }
     return data;
   } catch {
     return { status: 'server-error', message: 'Could not reach server. Try again.' };
   }
 });
+
+// ── Entitlement self-test (test builds only) ─────────────────────────────────
+// M13_SELFTEST=entitlement M13_USER_DATA=<empty folder> npx electron .
+// Calls the real, wrapped action handlers. Only calls that stop at the lock, or
+// that are harmless (a crate id that can't exist, listing crates), ever run.
+async function runEntitlementSelfTest() {
+  const results = [];
+  const check = (name, pass, info) => results.push({ name, pass: !!pass, ...(pass ? {} : { info }) });
+  const invoke = (channel, ...args) => _ipcHandlers.get(channel)({ sender: null }, ...args);
+
+  const missing = [...LOCKED_AFTER_TRIAL].filter((c) => !_ipcHandlers.has(c));
+  check('every locked action exists', missing.length === 0, missing);
+
+  const real = await refreshEntitlement();
+  check('a fresh profile has no licence and no trial', real.kind === 'none' && real.canChange === false, real);
+
+  for (const kind of ['none', 'expired']) {
+    _entitlement = { kind, canChange: false };
+    const notLocked = [];
+    for (const channel of LOCKED_AFTER_TRIAL) {
+      const r = await invoke(channel, {});
+      const locked = channel === 'ensure-export-folder' ? r === null : (r && r.locked === true);
+      if (!locked) notLocked.push(channel);
+    }
+    check(`${kind}: all ${LOCKED_AFTER_TRIAL.size} locked actions refuse`, notLocked.length === 0, notLocked);
+    const list = await invoke('crates-list');
+    check(`${kind}: browsing (list crates) still works`, !(list && list.locked), list);
+  }
+
+  _entitlement = { kind: 'trial', canChange: true, day: 5 };
+  const passThrough = await invoke('crates-delete', '__m13_selftest_no_such_crate__');
+  check('trial: a locked action reaches its real handler', passThrough && passThrough.ok === false && !passThrough.locked, passThrough);
+
+  _entitlement = { kind: 'licensed', canChange: true };
+  const licensed = await invoke('crates-delete', '__m13_selftest_no_such_crate__');
+  check('licensed: a locked action reaches its real handler', licensed && licensed.ok === false && !licensed.locked, licensed);
+
+  const failed = results.filter((r) => !r.pass);
+  console.log(JSON.stringify({ selftest: 'entitlement', passed: results.length - failed.length, failed: failed.length, results }, null, 2));
+  return failed.length ? 1 : 0;
+}
+
+// M13_SELFTEST=trial-flow M13_USER_DATA=<empty folder> M13_FAKE_MACHINE_ID=<32 hex>
+//   M13_LICENSE_API=<test deploy>/.netlify/functions/license npx electron .
+// Starts a real trial on the server for the FAKE machine id and walks it to day 14.
+async function runTrialFlowSelfTest() {
+  const results = [];
+  const check = (name, pass, info) => results.push({ name, pass: !!pass, ...(pass ? {} : { info }) });
+  const invoke = (channel, ...args) => _ipcHandlers.get(channel)({ sender: null }, ...args);
+  const ahead = (n) => { process.env.M13_TRIAL_DAYS_AHEAD = String(n); return refreshEntitlement(); };
+
+  check('using the fake test machine id', getMachineId() === process.env.M13_FAKE_MACHINE_ID, getMachineId());
+  let e = await ahead(0);
+  check('fresh profile → no trial yet, locked', e.kind === 'none' && e.canChange === false, e);
+
+  const started = await invoke('start-trial');
+  check('Start trial reaches the server from Electron → day 1 of 13', started.ok && started.entitlement.kind === 'trial' && started.entitlement.day === 1 && started.entitlement.daysLeft === 13, started);
+  const file = trialLib.readTrialFile(getTrialPath(), getMachineId());
+  check('trial.json saved and signed', file.valid === true, file);
+  const again = await invoke('start-trial');
+  check('Start trial again → same trial, not restarted', again.ok && again.entitlement.day === 1, again);
+
+  trialLib.removeTrialFile(getTrialPath());
+  e = await refreshEntitlement();
+  check('trial.json deleted (like a reinstall) → nothing locally', e.kind === 'none', e);
+  const sync = await syncTrialWithServer();
+  e = await refreshEntitlement();
+  check('…the server hands the same trial back', !sync.offline && e.kind === 'trial' && e.day === 1, { sync, e });
+
+  e = await ahead(9);
+  check('day 10 → still full access', e.kind === 'trial' && e.day === 10 && e.daysLeft === 4 && e.canChange, e);
+  e = await ahead(12);
+  check('day 13 → last day, full access', e.kind === 'trial' && e.day === 13 && e.daysLeft === 1 && e.canChange, e);
+  const beforeEnd = await invoke('crates-delete', '__m13_selftest_no_such_crate__');
+  check('day 13 → a locked action still reaches its handler', beforeEnd && !beforeEnd.locked, beforeEnd);
+  e = await ahead(13);
+  check('day 14 → trial ended, read-only', e.kind === 'expired' && e.canChange === false, e);
+  const afterEnd = await invoke('crates-save', { name: 'selftest', trackPaths: ['/nonexistent.mp3'] });
+  check('day 14 → saving a crate is refused', afterEnd && afterEnd.locked === true, afterEnd);
+  const browse = await invoke('crates-list');
+  check('day 14 → browsing still works', !(browse && browse.locked), browse);
+
+  e = await ahead(0);
+  check('clock wound back to day 1 → still ended', e.kind === 'expired' && e.clockWoundBack === true, e);
+  await syncTrialWithServer();
+  e = await refreshEntitlement();
+  check('next online check trusts the server’s real date again (test-only jump undone)', e.kind === 'trial' && e.day === 1, e);
+
+  const failed = results.filter((r) => !r.pass);
+  console.log(JSON.stringify({ selftest: 'trial-flow', passed: results.length - failed.length, failed: failed.length, results }, null, 2));
+  return failed.length ? 1 : 0;
+}

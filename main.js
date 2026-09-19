@@ -126,7 +126,10 @@ function clearStoredLicense() {
   try { fs.unlinkSync(getLicensePath()); } catch { /* ignore */ }
 }
 
-const VERIFY_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// How long a license is trusted locally before asking the server again. 12
+// hours so a refunded or switched-off key stops working the same day, while a
+// Mac with no internet keeps working (checkLicenseState never locks out offline).
+const VERIFY_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 function needsOnlineVerification(stored) {
   if (!stored.lastVerifiedAt) return true;
@@ -1299,6 +1302,10 @@ app.whenReady().then(() => {
   }
   if (!app.isPackaged && process.env.M13_SELFTEST === 'trial-flow') {
     runTrialFlowSelfTest().then((code) => app.exit(code));
+    return;
+  }
+  if (!app.isPackaged && process.env.M13_SELFTEST === 'phase5') {
+    runPhase5SelfTest().then((code) => app.exit(code));
     return;
   }
 
@@ -4803,5 +4810,153 @@ async function runTrialFlowSelfTest() {
 
   const failed = results.filter((r) => !r.pass);
   console.log(JSON.stringify({ selftest: 'trial-flow', passed: results.length - failed.length, failed: failed.length, results }, null, 2));
+  return failed.length ? 1 : 0;
+}
+
+// M13_SELFTEST=phase5 M13_USER_DATA=<empty folder> M13_TEST_LICENSE_FILE=<copy of a real license.json>
+//   M13_LICENSE_API=http://127.0.0.1:41999/license npx electron .
+// The awkward cases: a licensed Mac (online and offline), a refunded key, and
+// offline trials. It runs its own fake license server on that port, so nothing
+// touches m13app.com or the real profile.
+async function runPhase5SelfTest() {
+  const results = [];
+  const check = (name, pass, info) => results.push({ name, pass: !!pass, ...(pass ? {} : { info }) });
+  const invoke = (channel, ...args) => _ipcHandlers.get(channel)({ sender: null }, ...args);
+  const licensePath = getLicensePath();
+  const trialPath = getTrialPath();
+  const port = Number(new URL(LICENSE_API).port);
+
+  let reply = null; // what the fake server answers; null = no server running
+  const server = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (d) => { body += d; });
+    req.on('end', () => {
+      const action = (() => { try { return JSON.parse(body).action; } catch { return ''; } })();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(reply && reply[action] ? reply[action] : { status: 'error' }));
+    });
+  });
+  const online = (map) => new Promise((r) => { reply = map; server.listening ? r() : server.listen(port, '127.0.0.1', r); });
+  const offline = () => new Promise((r) => { reply = null; server.listening ? server.close(() => r()) : r(); });
+
+  const realLicense = fs.readFileSync(process.env.M13_TEST_LICENSE_FILE, 'utf8');
+  // verifiedDaysAgo decides whether the app is due an online check (it only
+  // re-checks a licence every VERIFY_INTERVAL_MS — 7 days).
+  const setLicensed = (verifiedDaysAgo = 0) => {
+    const data = JSON.parse(realLicense);
+    data.lastVerifiedAt = new Date(Date.now() - verifiedDaysAgo * trialLib.DAY_MS).toISOString();
+    fs.writeFileSync(licensePath, JSON.stringify(data));
+  };
+  const clearLicense = () => { try { fs.unlinkSync(licensePath); } catch {} };
+  const setTrial = (startDaysAgo, { tamper = false } = {}) => {
+    const startMs = Date.now() - startDaysAgo * trialLib.DAY_MS;
+    trialLib.writeTrialFile(trialPath, getMachineId(), {
+      startLocalDate: trialLib.localDateString(startMs),
+      startedAt: new Date(startMs).toISOString(),
+      hardEndsAt: new Date(startMs + 14 * trialLib.DAY_MS).toISOString(),
+      converted: false,
+      maxSeenMs: Date.now(),
+    });
+    if (tamper) {
+      const data = JSON.parse(fs.readFileSync(trialPath, 'utf8'));
+      data.startLocalDate = trialLib.localDateString(Date.now());  // "restart" it by hand
+      fs.writeFileSync(trialPath, JSON.stringify(data));
+    }
+  };
+  const reset = () => { clearLicense(); trialLib.removeTrialFile(trialPath); _entitlement = null; };
+  const state = async () => { _entitlement = null; return refreshEntitlement(); };
+  const lockedNow = async () => {
+    const r = await invoke('crates-delete', '__m13_phase5_no_such_crate__');
+    return !!(r && r.locked);
+  };
+  const trialServerAnswer = (extra = {}) => ({
+    trial: {
+      status: 'active', day: 1, daysTotal: 13, daysLeft: 13,
+      startLocalDate: trialLib.localDateString(Date.now()),
+      startedAt: new Date().toISOString(),
+      hardEndsAt: new Date(Date.now() + 14 * trialLib.DAY_MS).toISOString(),
+      serverTime: new Date().toISOString(), converted: false, ...extra,
+    },
+  });
+
+  // ── A licensed Mac ─────────────────────────────────────────────────────────
+  reset(); setLicensed();
+  await offline();
+  let e = await state();
+  check('licensed + no internet → still licensed, everything works', e.kind === 'licensed' && e.canChange === true, e);
+  check('licensed → no trial file is ever created', !fs.existsSync(trialPath));
+  check('licensed → a locked action runs normally', (await lockedNow()) === false);
+
+  await online({ check: { status: 'valid', preOrder: false } });
+  e = await state();
+  check('licensed + server says valid → still licensed', e.kind === 'licensed' && e.canChange === true, e);
+  check('licensed → the licence file is kept', fs.existsSync(licensePath));
+
+  // ── A refunded / switched-off key ──────────────────────────────────────────
+  // Today's behaviour (unchanged since 1.0.1): a licence is only re-checked with
+  // the server every 7 days, so a refund can take that long to bite.
+  reset(); setLicensed(0.1);                      // checked ~2.5 hours ago
+  await online({ check: { status: 'invalid' } });
+  e = await state();
+  check('refunded key, checked a couple of hours ago → still works until the next check', e.kind === 'licensed', e);
+  check('…and the licence file is still there', fs.existsSync(licensePath));
+
+  reset(); setLicensed(0.6);                        // the weekly check is due
+  await online({ check: { status: 'invalid' } });
+  e = await state();
+  check('refunded key, 14 hours later → licence removed from this Mac', !fs.existsSync(licensePath));
+  check('refunded key, no trial ever → asks to start one, and is read-only', e.kind === 'none' && e.canChange === false, e);
+  check('refunded key → locked actions refuse', (await lockedNow()) === true);
+
+  reset(); setLicensed(0.6); setTrial(20);          // an old trial, long finished
+  await online({ check: { status: 'invalid' } });
+  e = await state();
+  check('refunded key with an old trial → read-only, not a fresh trial', e.kind === 'expired' && e.canChange === false, e);
+
+  reset(); setLicensed(0.6);
+  await offline();
+  e = await state();
+  check('check due but no internet → keeps working (never locked out on a plane)', e.kind === 'licensed' && e.canChange === true, e);
+
+  // ── Trials without internet ────────────────────────────────────────────────
+  reset(); setTrial(0);
+  await offline();
+  e = await state();
+  check('day 1, no internet → trial keeps working', e.kind === 'trial' && e.day === 1 && e.canChange === true, e);
+  check('day 1 offline → actions run normally', (await lockedNow()) === false);
+
+  reset(); setTrial(12);
+  e = await state();
+  check('day 13, no internet → still on, 1 day left', e.kind === 'trial' && e.day === 13 && e.daysLeft === 1, e);
+
+  reset(); setTrial(13);
+  e = await state();
+  check('day 14, no internet → read-only', e.kind === 'expired' && e.canChange === false, e);
+  check('day 14 offline → locked actions refuse', (await lockedNow()) === true);
+
+  reset();
+  e = await state();
+  const startOffline = await invoke('start-trial');
+  check('no trial + no internet → can’t start, and says why', startOffline.ok === false && /internet/i.test(startOffline.message || ''), startOffline);
+  check('…and the Mac is not left half-started', (await state()).kind === 'none' && !fs.existsSync(trialPath));
+
+  await online(trialServerAnswer());
+  const started = await invoke('start-trial');
+  check('back online → starting the trial works', started.ok === true && started.entitlement.kind === 'trial' && started.entitlement.day === 1, started);
+
+  // ── Hand-edited trial file ─────────────────────────────────────────────────
+  reset(); setTrial(20, { tamper: true });
+  await offline();
+  e = await state();
+  check('trial file edited to look new, offline → read-only', e.kind === 'expired' && e.unverified === true && e.canChange === false, e);
+  await online({ trial: { ...trialServerAnswer().trial, status: 'expired', day: 21, daysLeft: 0, startLocalDate: trialLib.localDateString(Date.now() - 20 * trialLib.DAY_MS), startedAt: new Date(Date.now() - 20 * trialLib.DAY_MS).toISOString(), hardEndsAt: new Date(Date.now() - 6 * trialLib.DAY_MS).toISOString() } });
+  await syncTrialWithServer();
+  e = await state();
+  check('…and the server confirms it really ended', e.kind === 'expired' && e.canChange === false, e);
+
+  await offline();
+  reset();
+  const failed = results.filter((r) => !r.pass);
+  console.log(JSON.stringify({ selftest: 'phase5', passed: results.length - failed.length, failed: failed.length, results }, null, 2));
   return failed.length ? 1 : 0;
 }

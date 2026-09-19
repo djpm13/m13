@@ -160,6 +160,7 @@ for (const c of ['get-audio-url', 'scan-history', 'library-load', 'activate-lice
   ok(`"${c}" stays open after the trial`, ALLOWED.includes(c) && !locked.includes(c));
 }
 
+ok('a licence is re-checked with the server every 12 hours', /const VERIFY_INTERVAL_MS = 12 \* 60 \* 60 \* 1000;/.test(main));
 const wrapAt = main.indexOf('ipcMain.handle = (channel, handler)');
 const firstHandle = main.search(/ipcMain\.handle\('/);
 ok('the lock is installed before the first action is registered', wrapAt > 0 && wrapAt < firstHandle, { wrapAt, firstHandle });

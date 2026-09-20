@@ -220,19 +220,19 @@ async function callTrialServer(start) {
       }),
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { problem: 'server' };      // reached it, but it can't help
     const data = await res.json();
-    return data && ['none', 'active', 'expired'].includes(data.status) ? data : null;
+    return data && ['none', 'active', 'expired'].includes(data.status) ? { data } : { problem: 'server' };
   } catch {
-    return null; // offline or server unreachable
+    return { problem: 'offline' };                   // couldn't reach it at all
   }
 }
 
 // Brings trial.json in line with the server. Returns { offline: true } when
 // the server can't be reached, so nothing local is changed.
 async function syncTrialWithServer({ start = false } = {}) {
-  const server = await callTrialServer(start);
-  if (!server) return { offline: true };
+  const { data: server, problem } = await callTrialServer(start);
+  if (problem) return { offline: problem === 'offline', serverError: problem === 'server' };
   if (server.status === 'none') {
     trialLib.removeTrialFile(getTrialPath()); // the server is the record
   } else {
@@ -4686,7 +4686,7 @@ ipcMain.handle('get-entitlement', async () => {
   // server is the record; this also picks up a trial started on a reinstall).
   if (ent.kind !== 'licensed' && !_trialSyncedThisLaunch) {
     _trialSyncedThisLaunch = true;
-    syncTrialWithServer().then((r) => { if (!r.offline) refreshEntitlement(); });
+    syncTrialWithServer().then((r) => { if (!r.offline && !r.serverError) refreshEntitlement(); });
   }
   return ent;
 });
@@ -4697,6 +4697,10 @@ ipcMain.handle('start-trial', async () => {
   const result = await syncTrialWithServer({ start: true });
   if (result.offline) {
     return { ok: false, error: 'offline', message: 'Starting your free trial needs an internet connection, just this once. Check your connection and try again.' };
+  }
+  // Reached the server but it couldn't start the trial — don't blame their wi-fi.
+  if (result.serverError) {
+    return { ok: false, error: 'server', message: 'Couldn’t start your trial just now. Please try again in a minute.' };
   }
   _trialSyncedThisLaunch = true;
   return { ok: true, entitlement: await refreshEntitlement() };
@@ -4943,6 +4947,11 @@ async function runPhase5SelfTest() {
   const startOffline = await invoke('start-trial');
   check('no trial + no internet → can’t start, and says why', startOffline.ok === false && /internet/i.test(startOffline.message || ''), startOffline);
   check('…and the Mac is not left half-started', (await state()).kind === 'none' && !fs.existsSync(trialPath));
+
+  await online({ trial: { status: 'nonsense' } });   // server answers, but can't help
+  const serverBad = await invoke('start-trial');
+  check('server reachable but unhappy → says "try again", not "check your connection"',
+    serverBad.ok === false && serverBad.error === 'server' && /try again/i.test(serverBad.message || '') && !/connection/i.test(serverBad.message || ''), serverBad);
 
   await online(trialServerAnswer());
   const started = await invoke('start-trial');

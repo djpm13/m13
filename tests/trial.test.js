@@ -212,6 +212,11 @@ ok('main.js locked message is the approved one', main.includes("'Your free trial
 ok('the old pre-order screen is gone', !/preOrderModal|showPreOrderScreen|LAUNCH_DATE/.test(html));
 ok('startup asks for the entitlement, not the old licence check', /applyEntitlement\(await window\.m13\.getEntitlement\(\)\)/.test(html) && !/await window\.m13\.checkLicense\(\)/.test(html));
 ok('the broken require("electron") Buy link is gone', !/require\('electron'\)/.test(html));
+ok('What’s New fits a small screen: card bounded, list scrolls, buttons pinned',
+  /\.whats-new-card \{[^}]*max-height: calc\(100vh - 48px\)/s.test(html) &&
+  /\.whats-new-features \{[^}]*overflow-y: auto/s.test(html) &&
+  /\.whats-new-actions \{[^}]*flex-shrink: 0/s.test(html));
+ok('the Feature Tour card fits a small screen too', /\.tour-card \{[^}]*max-height: calc\(100vh - 48px\)/s.test(html));
 const gates = (html.match(/needsLicense\(\)/g) || []).length;
 ok(`change points are gated in the screens (${gates} gates)`, gates >= 45, gates);
 for (const fn of ['_tsSet', 'addBanger', 'removeBanger', 'addToPlaylist', 'doArrange', 'openM8ForTrack', 'openTuningConvertModal', 'addFilesToLibrary', 'startCopy', '_commitCrateSave', '_commitSessionSave', 'saveMetadata', 'openBrandModal', 'efOpen']) {

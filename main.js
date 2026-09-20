@@ -1433,11 +1433,15 @@ app.whenReady().then(() => {
   createWindow();
 
   // Test builds only: screenshot the window after optional scripted steps, then quit.
-  const uiSnap = !app.isPackaged ? { file: process.env.M13_UI_SNAPSHOT, actions: process.env.M13_UI_ACTIONS } : {};
+  const uiSnap = !app.isPackaged ? { file: process.env.M13_UI_SNAPSHOT, actions: process.env.M13_UI_ACTIONS, size: process.env.M13_WINDOW_SIZE } : {};
   if (uiSnap.file) {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     mainWindow.webContents.once('did-finish-load', async () => {
       try {
+        if (uiSnap.size) {
+          const [w, h] = uiSnap.size.split('x').map(Number);
+          if (w && h) mainWindow.setContentSize(w, h);
+        }
         await wait(3500);
         if (uiSnap.actions) await mainWindow.webContents.executeJavaScript(uiSnap.actions);
         await wait(1200);

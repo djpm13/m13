@@ -11,7 +11,7 @@
     "dist": "electron-builder",
     "release": "electron-builder --publish always",
     "dist:signed": "bash scripts/dist-signed.sh",
-    "test": "node tests/trial.test.js"
+    "test": "node tests/trial.test.js && node tests/pdb.test.js"
   },
   "build": {
     "appId": "com.djpints.m13",

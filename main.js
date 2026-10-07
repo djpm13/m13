@@ -1965,27 +1965,32 @@ function readDSString(buf, off) {
   if (off < 0 || off >= buf.length) return '';
   const kind = buf[off];
   if (!kind) return '';
-  const km = kind & 0xFE;
-  if (km === 0x40) {
-    const len = buf[off + 1] || 0;
-    return buf.slice(off + 2, off + 2 + len).toString('ascii').replace(/\0/g, '');
+  if (kind & 1) {
+    // Short ASCII: the length is in the top 7 bits and includes the header byte
+    const len = (kind >> 1) - 1;
+    return buf.slice(off + 1, off + 1 + len).toString('ascii').replace(/\0/g, '');
   }
-  if (km === 0x90) {
-    const len = (buf[off + 1] || 0) * 2;
-    return buf.slice(off + 2, off + 2 + len).toString('utf16le').replace(/\0/g, '');
-  }
-  const len = (kind - 1) >> 1;
-  return buf.slice(off + 1, off + 1 + len).toString('ascii').replace(/\0/g, '');
+  // Long: kind, u16 length (includes this 4-byte header), a pad byte, then the text
+  if ((kind !== 0x40 && kind !== 0x90) || off + 4 > buf.length) return '';
+  const len = buf.readUInt16LE(off + 1) - 4;
+  if (len <= 0) return '';
+  return buf.slice(off + 4, off + 4 + len).toString(kind === 0x90 ? 'utf16le' : 'ascii').replace(/\0/g, '');
 }
 
-function getPdbRowOffsets(page, numRows) {
+function getPdbRowOffsets(page) {
   const PAGE = 4096;
+  if (page[27] & 0x40) return []; // index page — no rows
+  // The row count is 13 bits: a history page holds more than 255 rows
+  const numRows = page.readUInt16LE(24) & 0x1FFF;
   const ng = Math.ceil(numRows / 16);
   const rows = [];
   for (let g = 0; g < ng; g++) {
     const gOff = PAGE - (g + 1) * 36;
+    if (gOff < 40) break;
+    const present = page.readUInt16LE(gOff + 32); // one bit per row, cleared when the row is deleted
     for (let i = 0; i < 16; i++) {
       if (g * 16 + i >= numRows) continue;
+      if (!((present >> i) & 1)) continue;
       const slot = 15 - i;
       const rOff = page.readUInt16LE(gOff + slot * 2);
       if (rOff !== 0xFFFF) rows.push({ row: g * 16 + i, absOff: 40 + rOff });
@@ -1994,7 +1999,8 @@ function getPdbRowOffsets(page, numRows) {
   return rows.sort((a, b) => a.absOff - b.absOff);
 }
 
-function parsePDB(filePath) {
+// Reads the four tables the history views need from one export.pdb
+function readPDBTables(filePath) {
   const buf = fs.readFileSync(filePath);
   const PAGE = 4096;
   const numPages = Math.floor(buf.length / PAGE);
@@ -2003,28 +2009,26 @@ function parsePDB(filePath) {
   const histPlaylists = new Map();
   const histEntries = [];
 
-  for (let pi = 0; pi < numPages; pi++) {
+  // Page 0 is the file header
+  for (let pi = 1; pi < numPages; pi++) {
     const off = pi * PAGE;
     const ptype = buf.readUInt32LE(off + 8);
-    const numRows = buf[off + 24];
-    if (!numRows) continue;
     const page = buf.slice(off, off + PAGE);
 
     if (ptype === 2) {
-      // ARTISTS: id at row+4, name at row+10
-      for (const { absOff } of getPdbRowOffsets(page, numRows)) {
+      // ARTISTS: id at row+4; the name's offset is a byte at row+9, or a u16 at row+10 on long-name rows (subtype bit 0x04)
+      for (const { absOff } of getPdbRowOffsets(page)) {
+        if (absOff + 12 > PAGE) continue;
         const id = page.readUInt32LE(absOff + 4);
-        const name = readDSString(page, absOff + 10);
+        const nameOff = (page.readUInt16LE(absOff) & 0x04) ? page.readUInt16LE(absOff + 10) : page[absOff + 9];
+        const name = readDSString(page, absOff + nameOff);
         if (id) artists.set(id, name);
       }
     } else if (ptype === 0) {
-      // TRACKS: artist_id at +0x24, bpm*100 at +0x38, track_id at +0x48, title ptr at +0x80
-      const rows = getPdbRowOffsets(page, numRows);
-      for (let ri = 0; ri < rows.length; ri++) {
-        const rs = rows[ri].absOff;
-        const re = ri + 1 < rows.length ? rows[ri + 1].absOff : PAGE - Math.ceil(numRows / 16) * 36;
-        if (re - rs < 0x88) continue;
-        const artistId = page.readUInt32LE(rs + 0x24);
+      // TRACKS: artist_id at +0x44 (+0x24 is ORIGINAL artist — fallback only), bpm*100 at +0x38, track_id at +0x48, title ptr at +0x80
+      for (const { absOff: rs } of getPdbRowOffsets(page)) {
+        if (rs + 0x88 > PAGE) continue;
+        const artistId = page.readUInt32LE(rs + 0x44) || page.readUInt32LE(rs + 0x24);
         const bpm = page.readUInt32LE(rs + 0x38);
         const trackId = page.readUInt32LE(rs + 0x48);
         const titleOff = rs + page.readUInt16LE(rs + 0x80);
@@ -2033,16 +2037,16 @@ function parsePDB(filePath) {
       }
     } else if (ptype === 11) {
       // HISTORY_PLAYLISTS: id at row+0, name at row+4
-      for (const { absOff } of getPdbRowOffsets(page, numRows)) {
+      for (const { absOff } of getPdbRowOffsets(page)) {
+        if (absOff + 4 > PAGE) continue;
         const id = page.readUInt32LE(absOff);
         const name = readDSString(page, absOff + 4);
         if (id) histPlaylists.set(id, name);
       }
     } else if (ptype === 12) {
-      // HISTORY_ENTRIES: fixed 12-byte rows: track_id, playlist_id, entry_index
-      for (let r = 0; r < numRows; r++) {
-        const rs = 40 + r * 12;
-        if (rs + 12 > PAGE) break;
+      // HISTORY_ENTRIES: 12-byte rows: track_id, playlist_id, entry_index
+      for (const { absOff: rs } of getPdbRowOffsets(page)) {
+        if (rs + 12 > PAGE) continue;
         const trackId = page.readUInt32LE(rs);
         const playlistId = page.readUInt32LE(rs + 4);
         const entryIndex = page.readUInt32LE(rs + 8);
@@ -2050,6 +2054,12 @@ function parsePDB(filePath) {
       }
     }
   }
+
+  return { artists, tracks, histPlaylists, histEntries };
+}
+
+function parsePDB(filePath) {
+  const { artists, tracks, histPlaylists, histEntries } = readPDBTables(filePath);
 
   histEntries.sort((a, b) => b.playlistId - a.playlistId || a.entryIndex - b.entryIndex);
 
@@ -2106,54 +2116,12 @@ ipcMain.handle('match-history', async (_event, { filePath, duration }) => {
       const pdbPath = `/Volumes/${vol}/PIONEER/rekordbox/export.pdb`;
       if (!fs.existsSync(pdbPath)) continue;
       try {
-        // Re-use low-level PDB parse to get raw maps (not flattened entries)
-        const buf = fs.readFileSync(pdbPath);
-        const PAGE = 4096;
-        const numPages = Math.floor(buf.length / PAGE);
-
-        for (let pi = 0; pi < numPages; pi++) {
-          const off = pi * PAGE;
-          const ptype = buf.readUInt32LE(off + 8);
-          const numRows = buf[off + 24];
-          if (!numRows) continue;
-          const page = buf.slice(off, off + PAGE);
-
-          if (ptype === 2) {
-            for (const { absOff } of getPdbRowOffsets(page, numRows)) {
-              const id = page.readUInt32LE(absOff + 4);
-              const name = readDSString(page, absOff + 10);
-              if (id) allArtists.set(id, name);
-            }
-          } else if (ptype === 0) {
-            const rows = getPdbRowOffsets(page, numRows);
-            for (let ri = 0; ri < rows.length; ri++) {
-              const rs = rows[ri].absOff;
-              const re = ri + 1 < rows.length ? rows[ri + 1].absOff : PAGE - Math.ceil(numRows / 16) * 36;
-              if (re - rs < 0x88) continue;
-              const artistId = page.readUInt32LE(rs + 0x24);
-              const bpm = page.readUInt32LE(rs + 0x38);
-              const trackId = page.readUInt32LE(rs + 0x48);
-              const titleOff = rs + page.readUInt16LE(rs + 0x80);
-              const title = titleOff > rs && titleOff < PAGE ? readDSString(page, titleOff) : '';
-              if (trackId) allTracks.set(trackId, { title, artistId, bpm });
-            }
-          } else if (ptype === 11) {
-            for (const { absOff } of getPdbRowOffsets(page, numRows)) {
-              const id = page.readUInt32LE(absOff);
-              const name = readDSString(page, absOff + 4);
-              if (id) allHistPlaylists.set(id, name);
-            }
-          } else if (ptype === 12) {
-            for (let r = 0; r < numRows; r++) {
-              const rs = 40 + r * 12;
-              if (rs + 12 > PAGE) break;
-              const trackId = page.readUInt32LE(rs);
-              const playlistId = page.readUInt32LE(rs + 4);
-              const entryIndex = page.readUInt32LE(rs + 8);
-              if (trackId) allHistEntries.push({ trackId, playlistId, entryIndex });
-            }
-          }
-        }
+        // Re-use the low-level PDB read to get raw maps (not flattened entries)
+        const t = readPDBTables(pdbPath);
+        for (const [id, name] of t.artists) allArtists.set(id, name);
+        for (const [id, track] of t.tracks) allTracks.set(id, track);
+        for (const [id, name] of t.histPlaylists) allHistPlaylists.set(id, name);
+        for (const e of t.histEntries) allHistEntries.push(e);
       } catch (err) {
         console.warn(`[M13] match-history PDB error for ${pdbPath}:`, err.message);
       }
